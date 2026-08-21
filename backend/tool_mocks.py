@@ -1,5 +1,5 @@
 """
-Talos — Deterministic Tool Mocks (Phase 3 + Phase 9)
+Warden — Deterministic Tool Mocks (Phase 3 + Phase 9)
 
 Hand-authored mock implementations for the sample SupportBot's four known tools.
 Each mock is fully deterministic — same inputs always produce same outputs.

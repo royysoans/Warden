@@ -1,5 +1,5 @@
 """
-Talos — Capability Mapper (Phase 2)
+Warden — Capability Mapper (Phase 2)
 
 Given an AgentConfig, produces a dict[str, str] mapping tool name → RiskClass value.
 

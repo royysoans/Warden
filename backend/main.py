@@ -1,11 +1,5 @@
 """
-Talos — FastAPI Application (Phase 8)
-
-Endpoints:
-  POST /agents                  — register an agent config
-  POST /suites/run              — trigger a suite run (returns immediately, runs in background)
-  GET  /suites/{id}/results     — poll run status + results
-  GET  /agents/{id}/history     — completed run history for an agent
+Warden — FastAPI Application
 """
 
 import json
@@ -36,7 +30,7 @@ from scorecard import compute_scorecard
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Talos")
+app = FastAPI(title="Warden")
 
 # Allow the React frontend (Phase 10) and curl to reach the API
 app.add_middleware(

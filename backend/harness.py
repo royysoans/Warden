@@ -1,5 +1,5 @@
 """
-Talos — Sandboxed Execution Harness (Phase 4 + Phase 9)
+Warden — Sandboxed Execution Harness (Phase 4 + Phase 9)
 
 Runs the target agent (TARGET_AGENT_MODEL) against a single Scenario using
 Phase 3's deterministic mocks (or Phase 9's generic fallback), producing a Trace.
@@ -64,6 +64,10 @@ def run_scenario(
         has_tool_calls = message.tool_calls and len(message.tool_calls) > 0
 
         if has_tool_calls:
+            # Dispatch all tool calls once, storing results by call ID so they
+            # can be reused when building the messages history — avoids calling
+            # get_or_create_mock() twice (which would diverge for LLM-synthesized mocks).
+            mock_results: dict[str, str] = {}
             for tc in message.tool_calls:
                 tool_name = tc.function.name
                 try:
@@ -90,6 +94,9 @@ def run_scenario(
                     args=tool_args,
                     inject=scenario.injected_tool_content,
                 )
+                # Cache result by call ID for reuse in messages history
+                mock_results[tc.id] = mock_result
+
                 # If a new entry was added to mocked_responses, persist immediately
                 if len(scenario.mocked_responses) > prior_cache_size and _persist_scenario_hook:
                     try:
@@ -116,27 +123,13 @@ def run_scenario(
                 })
             messages.append(assistant_msg)
 
-            # Append tool results to message history
+            # Append tool results to message history — reuse cached mock results
+            # so the agent sees exactly the same response that was recorded in Trace.
             for tc in message.tool_calls:
-                try:
-                    tool_args = json.loads(tc.function.arguments)
-                except (json.JSONDecodeError, TypeError):
-                    tool_args = {}
-                tool_def = tool_map.get(tc.function.name) or ToolDefinition(
-                    name=tc.function.name,
-                    description=f"Tool '{tc.function.name}' (unknown)",
-                    parameters={},
-                )
-                mock_result = get_or_create_mock(
-                    tool=tool_def,
-                    scenario=scenario,
-                    args=tool_args,
-                    inject=scenario.injected_tool_content,
-                )
                 messages.append({
                     "role": "tool",
                     "tool_call_id": tc.id,
-                    "content": mock_result,
+                    "content": mock_results[tc.id],
                 })
 
         else:

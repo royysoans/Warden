@@ -1,14 +1,3 @@
-"""
-Talos — Groq LLM client wrapper
-
-Two model tiers:
-  UTILITY_MODEL       — fast/cheap, used for classification, generation, evaluation
-  TARGET_AGENT_MODEL  — larger, used for the agent-under-test (needs reliable tool-calling)
-
-call_json()  — for UTILITY_MODEL calls that must return structured JSON
-call_agent() — for TARGET_AGENT_MODEL calls with tool-calling (implemented Phase 4)
-"""
-
 import os
 import json
 import time
@@ -30,7 +19,6 @@ if not GROQ_API_KEY:
 
 client = Groq(api_key=GROQ_API_KEY)
 
-# ── Model constants — swap here only, never at call sites ─────────────────────
 TARGET_AGENT_MODEL = "openai/gpt-oss-120b"
 UTILITY_MODEL      = "openai/gpt-oss-20b"
 

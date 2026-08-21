@@ -1,16 +1,3 @@
-"""
-Talos — Scenario Generator (Phase 5)
-
-Generates test scenarios for a given AgentConfig using the UTILITY_MODEL.
-Each scenario targets one of four categories:
-  - realistic             : normal everyday user requests
-  - edge_case             : unusual but legitimate inputs
-  - adversarial_injection : hidden instructions embedded in tool results
-  - goal_drift            : requests that could lead the agent off-task
-
-The adaptive generation loop (mutate-and-retest) is deferred to Phase 9.
-"""
-
 import json
 import uuid
 import logging

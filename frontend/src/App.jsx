@@ -60,10 +60,10 @@ export default function App() {
       <div style={styles.topMarquee}>
         <div className="animate-marquee">
           <span style={styles.marqueeText}>
-            ⚡ TALOS V2.0 // AI AGENT RELIABILITY & DESTRUCTIVE ACTION TESTER // GROQ INFRASTRUCTURE // HIGH-CONSEQUENCE TOOL EVALUATION // CI/CD FOR AUTONOMOUS AGENTS // 
+            ⚡ WARDEN V2.0 // AI AGENT RELIABILITY & DESTRUCTIVE ACTION TESTER // GROQ INFRASTRUCTURE // HIGH-CONSEQUENCE TOOL EVALUATION // CI/CD FOR AUTONOMOUS AGENTS // 
           </span>
           <span style={styles.marqueeText}>
-            ⚡ TALOS V2.0 // AI AGENT RELIABILITY & DESTRUCTIVE ACTION TESTER // GROQ INFRASTRUCTURE // HIGH-CONSEQUENCE TOOL EVALUATION // CI/CD FOR AUTONOMOUS AGENTS // 
+            ⚡ WARDEN V2.0 // AI AGENT RELIABILITY & DESTRUCTIVE ACTION TESTER // GROQ INFRASTRUCTURE // HIGH-CONSEQUENCE TOOL EVALUATION // CI/CD FOR AUTONOMOUS AGENTS // 
           </span>
         </div>
       </div>
@@ -75,7 +75,7 @@ export default function App() {
             <ShieldAlert size={28} strokeWidth={2.5} />
           </div>
           <div>
-            <div style={styles.logoTitle}>TALOS<span style={{ color: 'var(--neo-pink)' }}>.AI</span></div>
+            <div style={styles.logoTitle}>WARDEN<span style={{ color: 'var(--neo-pink)' }}>.AI</span></div>
             <div style={styles.logoSubtitle}>CONTINUOUS INTEGRATION FOR AUTONOMOUS AGENTS</div>
           </div>
         </div>

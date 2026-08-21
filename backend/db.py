@@ -1,15 +1,7 @@
-"""
-Talos — SQLite Persistence Layer (Phase 8)
-
-Raw sqlite3, parameterized queries, no ORM.
-Each function opens its own connection, writes, and closes — avoids
-"database is locked" errors from holding connections across background tasks.
-"""
-
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "talos.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "warden.db")
 
 
 def _connect() -> sqlite3.Connection:

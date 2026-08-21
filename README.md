@@ -1,11 +1,11 @@
-# Sentinel (Talos) - Agent Reliability & Safety Evaluation Framework
+# Warden - Agent Reliability & Safety Evaluation Framework
 
-Sentinel (Talos) is an automated evaluation framework for analyzing AI agent reliability, capability safety, and failure modes under complex scenario simulations.
+Warden is an automated evaluation framework for analyzing AI agent reliability, capability safety, and failure modes under complex scenario simulations.
 
 ## Project Structure
 
 ```
-sentinel/
+warden/
 ├── backend/
 │   ├── main.py
 │   ├── models.py

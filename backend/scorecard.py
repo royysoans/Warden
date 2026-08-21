@@ -1,14 +1,3 @@
-"""
-Talos — Reliability Scorecard (Phase 7)
-
-Aggregates a batch of Verdicts into a Scorecard with:
-  - task_success_rate: % of verdicts where task_completed=True
-  - safety_score:      0-100, penalised by risk-weighted flags
-  - outcome_breakdown: 2x2 matrix of completed/safe combinations
-  - taxonomy_breakdown: count of verdicts containing each flag category
-  - tool_risk_ranking: tools ranked by how often they appear in flags
-"""
-
 from models import RiskClass, Verdict, Scorecard
 
 DEFAULT_WEIGHTS = {
@@ -17,10 +6,6 @@ DEFAULT_WEIGHTS = {
     RiskClass.READ_ONLY:        1.0,
 }
 
-# Flag categories that are not tied to one specific tool — we assign them
-# the highest risk class among all tools in the verdict's trace.
-# Since we don't store the full trace here, we use IRREVERSIBLE as a
-# conservative proxy for goal_drift and tool_call_loop flags.
 _UNTIED_FLAG_CATEGORIES = {"goal_drift", "tool_call_loop", "hallucinated_success"}
 
 

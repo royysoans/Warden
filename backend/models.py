@@ -1,5 +1,5 @@
 """
-Talos — Pydantic data schemas (Phase 1)
+Warden — Pydantic data schemas (Phase 1)
 
 Every data shape the rest of the system depends on, defined once here.
 """
