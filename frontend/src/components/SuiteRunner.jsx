@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { PlayCircle, StopCircle, CheckCircle2, XCircle, Loader2, ShieldAlert, AlertTriangle, Layers, Terminal, Activity, HelpCircle } from 'lucide-react'
 
-const API = '/api'
+const API = import.meta.env.VITE_API_URL || '/api'
 const POLL_INTERVAL_MS = 2000
 
 export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCompleted }) {

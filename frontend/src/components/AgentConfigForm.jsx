@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Cpu, Zap, CheckCircle2, AlertCircle, Code, ShieldCheck, Sparkles } from 'lucide-react'
 
-const API = '/api'
+const API = import.meta.env.VITE_API_URL || '/api'
 
 const PRESETS = {
   SupportBot: {

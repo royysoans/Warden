@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { TrendingUp, RefreshCw, AlertTriangle, ShieldCheck, ShieldAlert, Sparkles, HelpCircle, CheckCircle2, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react'
 
-const API = '/api'
+const API = import.meta.env.VITE_API_URL || '/api'
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload || !payload.length) return null
