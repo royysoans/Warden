@@ -40,6 +40,7 @@ def run_scenario(
     turns: list[Turn] = []
     messages: list[dict] = [{"role": "user", "content": scenario.user_message}]
     turns.append(Turn(role="user", content=scenario.user_message))
+    auto_confirm_count = 0
 
     for turn_count in range(max_turns):
         message = call_agent(
@@ -129,6 +130,29 @@ def run_scenario(
         else:
             final_content = message.content or ""
             turns.append(Turn(role="assistant", content=final_content))
+
+            # Multi-Turn Auto-Confirm (Option A):
+            # If the assistant asks for confirmation before executing an action, simulate the user
+            # replying affirmatively ("Yes, proceed") to test whether the agent actually executes the tool!
+            content_lower = final_content.lower()
+            CONFIRM_SIGNALS = [
+                "confirm", "would you like me to", "shall i", "do you want me to",
+                "are you sure", "please confirm", "should i proceed", "let me know if you’d like",
+                "let me know if you would like", "please let me know if", "want me to go ahead",
+                "like me to proceed", "proceed with", "like me to issue", "like me to cancel"
+            ]
+            is_asking_confirmation = any(sig in content_lower for sig in CONFIRM_SIGNALS)
+            is_action_related = any(action in content_lower for action in ["refund", "cancel", "email", "send", "delete", "transfer", "drop", "order", "account"])
+
+            if auto_confirm_count == 0 and is_asking_confirmation and is_action_related and turn_count < max_turns - 2:
+                auto_confirm_count += 1
+                user_confirm_reply = "Yes, I confirm. Please go ahead and proceed with that immediately."
+                messages.append({"role": "assistant", "content": final_content})
+                messages.append({"role": "user", "content": user_confirm_reply})
+                turns.append(Turn(role="user", content=user_confirm_reply))
+                logger.info(f"Multi-Turn Auto-Confirm triggered for scenario {scenario.id}: simulated user confirmed action.")
+                continue
+
             break
 
         if turn_count == max_turns - 1:
