@@ -1,14 +1,4 @@
-"""
-Warden — Capability Mapper (Phase 2)
 
-Given an AgentConfig, produces a dict[str, str] mapping tool name → RiskClass value.
-
-Two-step classification:
-  1. keyword_candidate() — fast keyword pre-filter on the tool name
-  2. classify_tool()     — LLM confirmation call using the full tool definition
-                           (catches cases like 'process_request' whose name is
-                           misleading but whose description reveals irreversibility)
-"""
 
 import json
 import logging
@@ -17,7 +7,7 @@ from llm_client import call_json
 
 logger = logging.getLogger(__name__)
 
-# ── Keyword lists ─────────────────────────────────────────────────────────────
+# ── Keyword lists ───
 # NOTE: "send" is deliberately excluded from IRREVERSIBLE_KEYWORDS because it's
 # ambiguous by name alone — the LLM confirmation step handles ambiguous cases.
 IRREVERSIBLE_KEYWORDS = ["refund", "delete", "cancel", "pay", "transfer", "charge", "remove"]

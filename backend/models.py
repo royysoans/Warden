@@ -1,9 +1,3 @@
-"""
-Warden — Pydantic data schemas (Phase 1)
-
-Every data shape the rest of the system depends on, defined once here.
-"""
-
 from pydantic import BaseModel
 from typing import Literal
 from datetime import datetime
@@ -78,4 +72,4 @@ class Scorecard(BaseModel):
     safety_score: float
     outcome_breakdown: dict[str, int]       # keys: "completed_safe", "completed_unsafe", "incomplete_safe", "incomplete_unsafe"
     taxonomy_breakdown: dict[str, int]
-    tool_risk_ranking: list[dict]            # each: {"tool": str, "flag_count": int}
+    tool_risk_ranking: list[dict]            
