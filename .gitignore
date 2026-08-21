@@ -1,27 +1,67 @@
-# Virtual environment
+# Environment & Secrets
+.env
+.env.*
+*.env
+*.pem
+*.key
+
+# Python Virtual Environments
 .venv/
 venv/
 ENV/
 env/
+*.venv
 
-# Python cache
-**/__pycache__/
+# Python Cache & Build Artifacts
+__pycache__/
 *.py[cod]
 *$py.class
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+.eggs/
 
-# Environment variables
-.env
+# Database Files (SQLite & temporary files)
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
 
-# Database
-backend/talos.db
+# Node / Frontend Dependencies & Build Output
+node_modules/
+dist/
+.vite/
+.cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Node dependencies
-**/node_modules/
-**/dist/
-
-# IDE and system files
+# System & OS Files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE & Workspace Caches
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+
+# AI Agent & Assistant Files
 .agents/
 .gemini/
+.claude/

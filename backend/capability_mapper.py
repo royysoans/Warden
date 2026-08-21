@@ -80,14 +80,17 @@ def classify_tool(tool: ToolDefinition) -> str:
         return risk_class
 
     # First attempt
+    first_error: str | None = None
     try:
         return attempt()
     except Exception as e:
-        logger.warning(f"classify_tool first attempt failed for '{tool.name}': {e}. Retrying...")
+        first_error = str(e)
+        logger.warning(f"classify_tool first attempt failed for '{tool.name}': {first_error}. Retrying...")
 
-    # Second attempt — include the error so the model can self-correct
+    # Second attempt — include the error so the model can self-correct.
+    # `first_error` is captured above because `e` is out of scope here in Python 3.
     try:
-        return attempt(prior_error=str(e))
+        return attempt(prior_error=first_error)
     except Exception as e2:
         logger.warning(
             f"classify_tool second attempt also failed for '{tool.name}': {e2}. "

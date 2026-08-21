@@ -66,6 +66,12 @@ class Verdict(BaseModel):
     flags: list[FailureFlag] = []
 
 
+class RunCancelledError(Exception):
+    """Raised inside the generation loop when a suite run has been cancelled by
+    the user, so the pipeline can stop immediately instead of continuing to make
+    expensive LLM calls."""
+
+
 class Scorecard(BaseModel):
     suite_run_id: str
     task_success_rate: float

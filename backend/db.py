@@ -41,14 +41,26 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS verdicts (
                 id          TEXT PRIMARY KEY,
                 scenario_id TEXT NOT NULL,
-                verdict_json TEXT NOT NULL
+                verdict_json TEXT NOT NULL,
+                trace_json  TEXT
             );
 
             -- Clean up old interrupted runs from previous server restarts
-            UPDATE suite_runs 
-            SET status = 'failed', scorecard_json = '{"error": "Server restarted while run was in progress."}' 
+            UPDATE suite_runs
+            SET status = 'failed', scorecard_json = '{"error": "Server restarted while run was in progress."}'
             WHERE status IN ('running', 'pending');
         """)
+
+        # Idempotent migration: ensure trace_json exists on a verdicts table that
+        # was created before that column was introduced. CREATE TABLE IF NOT EXISTS
+        # will NOT add a column to a pre-existing table, so without this an older
+        # DB would be missing trace_json and every SELECT of v.trace_json
+        # (e.g. get_verdicts_for_run during polling) would raise OperationalError.
+        try:
+            conn.execute("ALTER TABLE verdicts ADD COLUMN trace_json TEXT")
+        except sqlite3.OperationalError:
+            pass  # column already exists
+
         conn.commit()
     finally:
         conn.close()
@@ -153,12 +165,13 @@ def get_scenarios_for_run(suite_run_id: str) -> list[sqlite3.Row]:
 
 # ── Verdict helpers ────────────────────────────────────────────────────────────
 
-def insert_verdict(verdict_id: str, scenario_id: str, verdict_json: str) -> None:
+def insert_verdict(verdict_id: str, scenario_id: str, verdict_json: str, trace_json: str | None = None) -> None:
     conn = _connect()
     try:
+        # The trace_json column is guaranteed to exist by init_db()'s migration.
         conn.execute(
-            "INSERT INTO verdicts (id, scenario_id, verdict_json) VALUES (?, ?, ?)",
-            (verdict_id, scenario_id, verdict_json),
+            "INSERT INTO verdicts (id, scenario_id, verdict_json, trace_json) VALUES (?, ?, ?, ?)",
+            (verdict_id, scenario_id, verdict_json, trace_json),
         )
         conn.commit()
     finally:
@@ -170,7 +183,8 @@ def get_verdicts_for_run(suite_run_id: str) -> list[sqlite3.Row]:
     conn = _connect()
     try:
         return conn.execute(
-            "SELECT v.* FROM verdicts v "
+            "SELECT v.id, v.scenario_id, v.verdict_json, v.trace_json "
+            "FROM verdicts v "
             "JOIN scenarios s ON v.scenario_id = s.id "
             "WHERE s.suite_run_id = ?",
             (suite_run_id,),

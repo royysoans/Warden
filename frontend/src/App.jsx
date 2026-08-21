@@ -31,7 +31,7 @@ export default function App() {
     setTab('Run Suite')
   }
 
-  function handleRunCompleted(runId, scorecard, newScenarios, newVerdicts, meta = {}) {
+  function handleRunCompleted(runId, scorecard, newScenarios, newVerdicts, newTraces, meta = {}) {
     const runEntry = {
       runId,
       agentId: meta.agentId || agentId,
@@ -40,6 +40,7 @@ export default function App() {
       scorecard,
       scenarios: newScenarios || [],
       verdicts: newVerdicts || [],
+      traces: newTraces || {},
       timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     }
 

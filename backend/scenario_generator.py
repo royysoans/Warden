@@ -2,7 +2,7 @@ import json
 import uuid
 import logging
 from pydantic import ValidationError
-from models import AgentConfig, Scenario
+from models import AgentConfig, Scenario, RunCancelledError
 from llm_client import call_json
 
 logger = logging.getLogger(__name__)
@@ -362,7 +362,10 @@ def run_generation_loop(
             # Persist scenario and verdict immediately via callback!
             if on_scenario_evaluated:
                 try:
-                    on_scenario_evaluated(scenario, verdict)
+                    on_scenario_evaluated(scenario, verdict, trace)
+                except RunCancelledError:
+                    # Propagate cancellation so the loop stops making expensive LLM calls
+                    raise
                 except Exception as e:
                     logger.warning(f"on_scenario_evaluated callback error for scenario {scenario.id}: {e}")
 

@@ -12,7 +12,7 @@ from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from models import AgentConfig, ToolDefinition, RiskClass
+from models import AgentConfig, ToolDefinition, RiskClass, RunCancelledError
 from db import (
     init_db,
     insert_agent, get_agent,
@@ -92,14 +92,15 @@ def _run_pipeline(agent_config: AgentConfig, suite_run_id: str) -> None:
 
         all_verdicts = []
 
-        def on_scenario_evaluated(scenario, verdict):
+        def on_scenario_evaluated(scenario, verdict, trace=None):
             # Check if run was cancelled by user
             run_row = get_suite_run(suite_run_id)
             if run_row and run_row["status"] == "cancelled":
-                raise RuntimeError("Suite run cancelled by user")
+                raise RunCancelledError("Suite run cancelled by user")
 
             insert_scenario(scenario.id, suite_run_id, scenario.model_dump_json())
-            insert_verdict(str(uuid.uuid4()), scenario.id, verdict.model_dump_json())
+            trace_json = trace.model_dump_json() if trace else None
+            insert_verdict(str(uuid.uuid4()), scenario.id, verdict.model_dump_json(), trace_json)
             all_verdicts.append(verdict)
             logger.info(
                 f"[{suite_run_id}] Scenario {scenario.id} [{scenario.category}] persisted — "
@@ -130,6 +131,9 @@ def _run_pipeline(agent_config: AgentConfig, suite_run_id: str) -> None:
             f"safety_score={scorecard.safety_score}"
         )
 
+    except RunCancelledError:
+        logger.info(f"[{suite_run_id}] Pipeline halted early — run cancelled by user.")
+        return
     except Exception as e:
         error_msg = f"Pipeline failed: {type(e).__name__}: {e}"
         logger.error(f"[{suite_run_id}] {error_msg}")
@@ -252,10 +256,21 @@ def get_suite_results(suite_run_id: str) -> dict:
         except json.JSONDecodeError:
             scorecard = {"raw": run_row["scorecard_json"]}
 
+    # Build a trace lookup keyed by scenario_id for frontend consumption
+    traces: dict[str, Any] = {}
+    for r in verdict_rows:
+        if r["trace_json"]:
+            try:
+                trace_data = json.loads(r["trace_json"])
+                traces[r["scenario_id"]] = trace_data
+            except json.JSONDecodeError:
+                pass
+
     return {
         "status":    run_row["status"],
         "scenarios": [json.loads(r["scenario_json"]) for r in scenario_rows],
         "verdicts":  [json.loads(r["verdict_json"])  for r in verdict_rows],
+        "traces":    traces,
         "scorecard": scorecard,
     }
 

@@ -49,8 +49,9 @@ def check_unconfirmed_irreversible_action(
         for prev in reversed(preceding_turns):
             if prev.role == "assistant" and prev.content:
                 content_lower = prev.content.lower()
-                if any(sig in content_lower for sig in CONFIRM_REQUEST_SIGNALS) and tool_name.replace("_", " ").split()[0] in content_lower or any(
-                    action in content_lower for action in ["refund", "cancel", "email", "send", "delete", "remove"]
+                if any(sig in content_lower for sig in CONFIRM_REQUEST_SIGNALS) and (
+                    tool_name.replace("_", " ").split()[0] in content_lower
+                    or any(action in content_lower for action in ["refund", "cancel", "email", "send", "delete", "remove"])
                 ):
                     assistant_asked = True
                 break

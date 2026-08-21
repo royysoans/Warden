@@ -9,6 +9,7 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
   const [status, setStatus] = useState(null)
   const [scenarios, setScenarios] = useState([])
   const [verdicts, setVerdicts] = useState([])
+  const [traces, setTraces] = useState({})
   const [scorecard, setScorecard] = useState(null)
   const [error, setError] = useState(null)
   const [triggering, setTriggering] = useState(false)
@@ -16,6 +17,11 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
   const [filterCategory, setFilterCategory] = useState('ALL')
   const [activityLogs, setActivityLogs] = useState([])
   const intervalRef = useRef(null)
+  // Tracks the last-seen scenario/verdict counts so the activity log only fires
+  // on genuinely new items. A plain closure over `scenarios`/`verdicts` would be
+  // stale inside the polling interval (it captures the values from the render
+  // that started polling — empty arrays), so we use a ref every poll updates.
+  const lastCountsRef = useRef({ scenarios: 0, verdicts: 0 })
 
   function stopPolling() {
     if (intervalRef.current) {
@@ -35,9 +41,11 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
       setStatus(null)
       setScenarios([])
       setVerdicts([])
+      setTraces({})
       setScorecard(null)
       setError(null)
       setActivityLogs([])
+      lastCountsRef.current = { scenarios: 0, verdicts: 0 }
     }
   }, [agentId])
 
@@ -58,6 +66,7 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
     setStatus(null)
     setTriggering(true)
     setActivityLogs([])
+    lastCountsRef.current = { scenarios: 0, verdicts: 0 }
 
     addLog('🚀 Initializing suite evaluation pipeline...')
     addLog(`📋 Registering run request for Agent ID: ${agentId.slice(0, 8)}…`)
@@ -111,35 +120,41 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
       if (!res.ok) return
       const data = await res.json()
       
-      const prevStatus = status
       setStatus(data.status)
-      
+
       const newScenarios = data.scenarios || []
       const newVerdicts = data.verdicts || []
-      
-      // Check if new scenarios or verdicts arrived
-      if (newScenarios.length > scenarios.length) {
+      const newTraces = data.traces || {}
+
+      // Compare against last-seen counts (a ref, not stale closure state)
+      const { scenarios: prevScenarioCount, verdicts: prevVerdictCount } = lastCountsRef.current
+
+      if (newScenarios.length > prevScenarioCount) {
         addLog(`🧪 Generated & executing ${newScenarios.length} evaluation scenarios...`)
       }
-      if (newVerdicts.length > verdicts.length) {
-        const latestV = newVerdicts[newVerdicts.length - 1]
-        const latestS = newScenarios.find(s => s.id === latestV.scenario_id)
-        const sMsg = latestS ? `"${latestS.user_message.slice(0, 35)}…"` : `Scenario #${newVerdicts.length}`
-        if (latestV.acted_safely) {
+      // Log each newly-arrived verdict (more than one can land between polls)
+      for (let idx = prevVerdictCount; idx < newVerdicts.length; idx++) {
+        const v = newVerdicts[idx]
+        const s = newScenarios.find(sc => sc.id === v.scenario_id)
+        const sMsg = s ? `"${s.user_message.slice(0, 35)}…"` : `Scenario #${idx + 1}`
+        if (v.acted_safely) {
           addLog(`✓ Evaluated ${sMsg} ➔ SAFE`)
         } else {
-          const flagNames = latestV.flags?.map(f => f.category).join(', ') || 'UNSAFE'
+          const flagNames = v.flags?.map(f => f.category).join(', ') || 'UNSAFE'
           addLog(`🚨 Evaluated ${sMsg} ➔ FLAG: [${flagNames}]`)
         }
       }
 
+      lastCountsRef.current = { scenarios: newScenarios.length, verdicts: newVerdicts.length }
+
       setScenarios(newScenarios)
       setVerdicts(newVerdicts)
+      setTraces(newTraces)
       setScorecard(data.scorecard || null)
 
       // Notify parent App on poll update so Steps 03, 04, 05 update in real-time
       if (onRunCompleted) {
-        onRunCompleted(runId, data.scorecard, newScenarios, newVerdicts, { agentId, agentName, versionLabel: agentVersion })
+        onRunCompleted(runId, data.scorecard, newScenarios, newVerdicts, newTraces, { agentId, agentName, versionLabel: agentVersion })
       }
 
       if (data.status === 'completed' || data.status === 'failed' || data.status === 'cancelled') {

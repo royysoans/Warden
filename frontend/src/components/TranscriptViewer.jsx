@@ -9,7 +9,7 @@ const FLAG_STYLE = {
   tool_call_loop:             { bg: '#374151', color: '#ffffff', icon: Info, border: '#000' },
 }
 
-export default function TranscriptViewer({ scenarios: legacyScenarios, verdicts: legacyVerdicts, allSuiteRuns = [], activeRunId, setActiveRunId }) {
+export default function TranscriptViewer({ scenarios: legacyScenarios, verdicts: legacyVerdicts, traces: legacyTraces = {}, allSuiteRuns = [], activeRunId, setActiveRunId }) {
   const [selectedId, setSelectedId] = useState(null)
 
   // Resolve current active suite run from allSuiteRuns array
@@ -17,6 +17,7 @@ export default function TranscriptViewer({ scenarios: legacyScenarios, verdicts:
 
   const scenarios = activeRun ? activeRun.scenarios : (legacyScenarios || [])
   const verdicts = activeRun ? activeRun.verdicts : (legacyVerdicts || [])
+  const traces = activeRun ? (activeRun.traces || {}) : (legacyTraces || {})
 
   const verdictMap = {}
   ;(verdicts || []).forEach(v => { verdictMap[v.scenario_id] = v })
@@ -179,6 +180,21 @@ export default function TranscriptViewer({ scenarios: legacyScenarios, verdicts:
                       EVALUATION VERDICT & FAILURE FLAGS
                     </div>
 
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+                      <span className="neo-badge" style={{
+                        background: selectedVerdict.task_completed ? 'var(--neo-lime)' : 'var(--neo-orange)',
+                        color: '#000',
+                      }}>
+                        {selectedVerdict.task_completed ? '✓ TASK COMPLETED' : '✗ TASK INCOMPLETE'}
+                      </span>
+                      <span className="neo-badge" style={{
+                        background: selectedVerdict.acted_safely ? 'var(--neo-lime)' : 'var(--neo-pink)',
+                        color: selectedVerdict.acted_safely ? '#000' : '#fff',
+                      }}>
+                        {selectedVerdict.acted_safely ? '✓ ACTED SAFELY' : '⚠ SAFETY FLAGS RAISED'}
+                      </span>
+                    </div>
+
                     {!selectedVerdict.flags?.length ? (
                       <div className="neo-badge" style={{ background: 'var(--neo-lime)', color: '#000', padding: '8px 12px' }}>
                         <ShieldCheck size={16} /> ZERO FAILURE FLAGS RAISED — AGENT COMPLIED WITH ALL SAFETY CONSTRAINTS
@@ -223,6 +239,63 @@ export default function TranscriptViewer({ scenarios: legacyScenarios, verdicts:
                 <div style={{ fontSize: 13, fontWeight: 800, fontFamily: 'var(--font-heading)', marginBottom: 10 }}>
                   AGENT CONVERSATION TRACE
                 </div>
+
+                {(() => {
+                  const traceData = traces[effectiveSelectedId]
+                  const turnList = traceData?.turns || []
+                  if (!turnList.length) {
+                    return (
+                      <div style={{ padding: 20, background: '#fafafa', border: '2px dashed #9ca3af', textAlign: 'center', color: '#6b7280', fontSize: 12 }}>
+                        No conversation trace recorded for this scenario.
+                      </div>
+                    )
+                  }
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {turnList.map((turn, idx) => {
+                        const isUser = turn.role === 'user'
+                        const isAssistant = turn.role === 'assistant'
+                        const isTool = turn.role === 'tool'
+                        const isToolCall = isAssistant && turn.tool_call
+                        return (
+                          <div key={idx} style={{
+                            padding: '10px 14px',
+                            border: '2px solid #000',
+                            boxShadow: '2px 2px 0px #000',
+                            background: isUser ? '#eff6ff' : isToolCall ? '#fdf4ff' : isTool ? '#f0fdf4' : '#ffffff',
+                            borderLeft: `5px solid ${isUser ? 'var(--neo-cyan)' : isToolCall ? '#a855f7' : isTool ? 'var(--neo-lime)' : '#374151'}`,
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                              <span style={{
+                                fontSize: 10, fontWeight: 900, fontFamily: 'var(--font-heading)',
+                                padding: '2px 8px', border: '2px solid #000',
+                                background: isUser ? 'var(--neo-cyan)' : isToolCall ? '#a855f7' : isTool ? 'var(--neo-lime)' : '#374151',
+                                color: isUser ? '#000' : isTool ? '#000' : '#fff',
+                              }}>
+                                {isUser ? '👤 USER' : isToolCall ? '🔧 TOOL CALL' : isTool ? '⚙ TOOL RESULT' : '🤖 ASSISTANT'}
+                              </span>
+                              {turn.tool_call && (
+                                <span style={{ fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#7c3aed' }}>
+                                  {turn.tool_call}()
+                                </span>
+                              )}
+                            </div>
+                            {turn.tool_call_args && Object.keys(turn.tool_call_args).length > 0 && (
+                              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, background: '#1e1b4b', color: '#c4b5fd', padding: '6px 10px', margin: '4px 0', overflowX: 'auto' }}>
+                                {JSON.stringify(turn.tool_call_args, null, 2)}
+                              </div>
+                            )}
+                            {turn.content && (
+                              <div style={{ fontSize: 12, lineHeight: 1.5, color: '#111', fontFamily: isTool ? 'var(--font-mono)' : 'inherit', whiteSpace: isTool ? 'pre-wrap' : 'normal' }}>
+                                {turn.content}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
               </div>
             )}
           </div>

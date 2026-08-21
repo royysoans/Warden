@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 if not GROQ_API_KEY:
     raise EnvironmentError(
-        "GROQ_API_KEY is not set. Check that .env exists in talos/backend/ and contains a valid key."
+        "GROQ_API_KEY is not set. Check that .env exists in backend/ and contains a valid key."
     )
 
 client = Groq(api_key=GROQ_API_KEY)

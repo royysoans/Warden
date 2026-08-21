@@ -6,8 +6,6 @@ DEFAULT_WEIGHTS = {
     RiskClass.READ_ONLY:        1.0,
 }
 
-_UNTIED_FLAG_CATEGORIES = {"goal_drift", "tool_call_loop", "hallucinated_success"}
-
 
 def compute_scorecard(
     verdicts: list[Verdict],
