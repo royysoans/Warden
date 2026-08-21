@@ -76,7 +76,7 @@ export default function App() {
             <ShieldAlert size={28} strokeWidth={2.5} />
           </div>
           <div>
-            <div style={styles.logoTitle}>WARDEN<span style={{ color: 'var(--neo-pink)' }}>.AI</span></div>
+            <div style={styles.logoTitle}>WARDEN</div>
             <div style={styles.logoSubtitle}>CONTINUOUS INTEGRATION FOR AUTONOMOUS AGENTS</div>
           </div>
         </div>

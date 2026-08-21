@@ -200,36 +200,77 @@ export default function TranscriptViewer({ scenarios: legacyScenarios, verdicts:
                         <ShieldCheck size={16} /> ZERO FAILURE FLAGS RAISED — AGENT COMPLIED WITH ALL SAFETY CONSTRAINTS
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {selectedVerdict.flags.map((flag, idx) => {
-                          const conf = FLAG_STYLE[flag.category] || FLAG_STYLE.unsafe_destructive_action
-                          const Icon = conf.icon
-                          return (
-                            <div
-                              key={idx}
-                              className="neo-box"
-                              style={{
-                                background: conf.bg,
-                                color: conf.color,
-                                padding: 12,
-                                border: '2px solid #000',
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 800, fontSize: 12 }}>
-                                <Icon size={16} />
-                                <span>{flag.category.replace(/_/g, ' ').toUpperCase()}</span>
-                                {flag.tool_involved && (
-                                  <span className="neo-badge" style={{ background: '#000', color: '#fff', fontSize: 10 }}>
-                                    TOOL: {flag.tool_involved}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {(() => {
+                          // Group flags by identical evidence string to avoid duplicate text blocks
+                          const groupedFlags = []
+                          selectedVerdict.flags.forEach(flag => {
+                            const existing = groupedFlags.find(g => g.evidence === flag.evidence)
+                            if (existing) {
+                              existing.items.push(flag)
+                            } else {
+                              groupedFlags.push({
+                                evidence: flag.evidence,
+                                items: [flag],
+                              })
+                            }
+                          })
+
+                          return groupedFlags.map((group, gIdx) => {
+                            const primaryCategory = group.items[0].category
+                            const conf = FLAG_STYLE[primaryCategory] || FLAG_STYLE.unsafe_destructive_action
+                            const isLayerB = group.items.some(it => it.category === 'injection_compliance' || it.category === 'goal_drift')
+
+                            return (
+                              <div
+                                key={gIdx}
+                                className="neo-box"
+                                style={{
+                                  background: conf.bg,
+                                  color: conf.color,
+                                  padding: 14,
+                                  border: '2px solid #000',
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                                  {group.items.map((item, iIdx) => {
+                                    const itemConf = FLAG_STYLE[item.category] || FLAG_STYLE.unsafe_destructive_action
+                                    const Icon = itemConf.icon
+                                    return (
+                                      <span
+                                        key={iIdx}
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: 6,
+                                          fontWeight: 800,
+                                          fontSize: 12,
+                                          background: 'rgba(0, 0, 0, 0.15)',
+                                          padding: '4px 8px',
+                                          border: '1.5px solid #000',
+                                        }}
+                                      >
+                                        <Icon size={14} />
+                                        <span>{item.category.replace(/_/g, ' ').toUpperCase()}</span>
+                                        {item.tool_involved && (
+                                          <span className="neo-badge" style={{ background: '#000', color: '#fff', fontSize: 9, padding: '2px 6px' }}>
+                                            TOOL: {item.tool_involved}
+                                          </span>
+                                        )}
+                                      </span>
+                                    )
+                                  })}
+                                  <span className="neo-badge" style={{ background: isLayerB ? 'var(--neo-purple)' : 'var(--neo-cyan)', color: isLayerB ? '#fff' : '#000', fontSize: 10, marginLeft: 'auto' }}>
+                                    {isLayerB ? 'LAYER B (LLM JUDGE)' : 'LAYER A (HEURISTIC)'}
                                   </span>
-                                )}
+                                </div>
+                                <div style={{ fontSize: 11, lineHeight: 1.5, opacity: 0.95, fontFamily: 'var(--font-mono)', background: 'rgba(255, 255, 255, 0.1)', padding: 10, border: '1px solid rgba(0, 0, 0, 0.2)' }}>
+                                  {group.evidence}
+                                </div>
                               </div>
-                              <div style={{ fontSize: 11, marginTop: 6, opacity: 0.95, fontFamily: 'var(--font-mono)' }}>
-                                {flag.evidence}
-                              </div>
-                            </div>
-                          )
-                        })}
+                            )
+                          })
+                        })()}
                       </div>
                     )}
                   </div>

@@ -288,10 +288,10 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <div style={{ fontSize: 13, fontWeight: 800, fontFamily: 'var(--font-heading)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Activity size={18} color="var(--neo-pink)" />
-              LIVE EVALUATION PROGRESS ({completedCount} / {totalScenarios || '16'} SCENARIOS COMPLETED)
+              LIVE EVALUATION PROGRESS ({completedCount} / {totalScenarios || 8} SCENARIOS COMPLETED)
             </div>
             <span className="neo-badge" style={{ background: 'var(--neo-yellow)' }}>
-              {progressPercent}% COMPLETE
+              {totalScenarios > 0 ? progressPercent : Math.round((completedCount / 8) * 100)}% COMPLETE
             </span>
           </div>
 
