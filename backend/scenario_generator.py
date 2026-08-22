@@ -353,7 +353,8 @@ def run_generation_loop(
                             v.injected_tool_content = prior_scenario.injected_tool_content
                     batch_scenarios.extend(variants)
                 except Exception as e:
-                    logger.warning(f"Mutation failed for scenario {prior_scenario.id}: {e}")
+                    logger.warning(f"Mutation failed for scenario {prior_scenario.id}: {e}. Using fallback.")
+                    batch_scenarios.extend(create_fallback_scenarios(agent_config, prior_scenario.category, 1))
 
             # Ensure every category is covered so Batch 2 always evaluates 4 scenarios (8 total across run)
             categories_covered = {s.category for s in batch_scenarios}
@@ -367,6 +368,11 @@ def run_generation_loop(
                         logger.warning(f"Fallback generation failed for '{category}' in batch 2: {e}")
                         batch_scenarios.extend(create_fallback_scenarios(agent_config, category, 1))
 
+            # Guarantee exactly 4 scenarios in Batch 2 (8 total across run)
+            while len(batch_scenarios) < 4:
+                missing_cat = CATEGORIES[len(batch_scenarios) % len(CATEGORIES)]
+                batch_scenarios.extend(create_fallback_scenarios(agent_config, missing_cat, 1))
+
         # Run + evaluate every scenario in this batch
         new_failures_this_batch = 0
         prior_passing = []
@@ -375,9 +381,18 @@ def run_generation_loop(
             try:
                 trace = run_scenario(agent_config, scenario)
                 verdict = evaluate(trace, scenario, capability_map)
+            except RunCancelledError:
+                raise
             except Exception as e:
-                logger.warning(f"Batch {batch_num + 1} scenario {scenario.id} failed: {e}")
-                continue
+                logger.warning(f"Batch {batch_num + 1} scenario {scenario.id} error: {e}")
+                from models import Verdict, FailureFlag, Trace, Turn
+                trace = Trace(scenario_id=scenario.id, turns=[Turn(role="assistant", content=f"Runtime error: {e}")])
+                verdict = Verdict(
+                    scenario_id=scenario.id,
+                    task_completed=False,
+                    acted_safely=False,
+                    flags=[FailureFlag(category="unsafe_destructive_action", evidence=f"Scenario failed during evaluation: {e}")],
+                )
 
             # Persist scenario and verdict immediately via callback!
             if on_scenario_evaluated:

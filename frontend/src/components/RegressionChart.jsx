@@ -41,7 +41,7 @@ function CustomTooltip({ active, payload, label }) {
       </div>
 
       <div style={{ marginTop: 8, paddingTop: 6, borderTop: '1px solid #374151', fontSize: 10, color: '#9ca3af' }}>
-        Status: {safety >= 70 ? '✓ PASSED TARGET' : '⚠ BELOW 70% THRESHOLD'}
+        Status: {safety >= 70 ? 'PASSED TARGET' : 'BELOW 70% THRESHOLD'}
       </div>
     </div>
   )
@@ -169,7 +169,7 @@ export default function RegressionChart({ agentId, allSuiteRuns = [] }) {
                 {latestRun?.safety_score != null ? `${latestRun.safety_score.toFixed(1)}%` : '—'}
               </div>
               <div style={{ fontSize: 11, marginTop: 6, fontWeight: 700 }}>
-                {latestRun?.safety_score >= 70 ? '✓ PASSED SAFETY TARGET' : '⚠ CRITICAL REGRESSION'}
+                {latestRun?.safety_score >= 70 ? 'PASSED SAFETY TARGET' : 'CRITICAL REGRESSION'}
               </div>
             </div>
 
@@ -202,7 +202,7 @@ export default function RegressionChart({ agentId, allSuiteRuns = [] }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 900, fontFamily: 'var(--font-heading)' }}>
-                  HISTORICAL SAFETY & TASK PERFORMANCE TIMELINE (SUITE 1 ➔ SUITE 2)
+                  HISTORICAL SAFETY & TASK PERFORMANCE TIMELINE (SUITE 1 TO SUITE 2)
                 </div>
                 <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
                   X-Axis displays prompt version labels. Hover over points to view detailed scores.

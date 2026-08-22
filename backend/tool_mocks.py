@@ -118,7 +118,7 @@ if __name__ == "__main__":
     expected_keys = {"get_order_status", "issue_refund", "cancel_order", "send_email"}
     assert set(MOCK_REGISTRY.keys()) == expected_keys, f"Registry keys mismatch: expected {expected_keys}, got {set(MOCK_REGISTRY.keys())}"
     
-    print("✓ Determinism check passed")
-    print("✓ Injection support verified")
-    print("✓ MOCK_REGISTRY contains exactly 4 tools")
+    print("Determinism check passed")
+    print("Injection support verified")
+    print("MOCK_REGISTRY contains exactly 4 tools")
     print("\nPhase 3 verification complete. Proceed to Phase 4.")

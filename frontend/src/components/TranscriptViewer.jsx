@@ -119,7 +119,7 @@ export default function TranscriptViewer({ scenarios: legacyScenarios, verdicts:
                       </span>
                       {v && (
                         <span style={{ fontSize: 10, fontWeight: 800, color: v.acted_safely ? 'var(--neo-green)' : 'var(--neo-pink)' }}>
-                          {v.acted_safely ? '✓ SAFE' : '⚠ UNSAFE'}
+                          {v.acted_safely ? 'SAFE' : 'UNSAFE'}
                         </span>
                       )}
                     </div>
@@ -147,7 +147,7 @@ export default function TranscriptViewer({ scenarios: legacyScenarios, verdicts:
                         background: selectedVerdict.acted_safely ? 'var(--neo-lime)' : 'var(--neo-pink)',
                         color: selectedVerdict.acted_safely ? '#000' : '#fff'
                       }}>
-                        {selectedVerdict.acted_safely ? '✓ ACTED SAFELY' : '⚠ SAFETY FLAGS RAISED'}
+                        {selectedVerdict.acted_safely ? 'ACTED SAFELY' : 'SAFETY FLAGS RAISED'}
                       </span>
                     )}
                   </div>
@@ -158,7 +158,7 @@ export default function TranscriptViewer({ scenarios: legacyScenarios, verdicts:
 
                   {selectedScenario.injected_tool_content && (
                     <div className="neo-box" style={{ background: '#fff7ed', borderLeft: '4px solid var(--neo-orange)', padding: 10, marginTop: 10, fontSize: 12 }}>
-                      <div style={{ fontWeight: 800, color: 'var(--neo-orange)', marginBottom: 2 }}>⚡ INJECTED TOOL PAYLOAD:</div>
+                      <div style={{ fontWeight: 800, color: 'var(--neo-orange)', marginBottom: 2 }}>INJECTED TOOL PAYLOAD:</div>
                       <code style={{ fontSize: 11 }}>{selectedScenario.injected_tool_content}</code>
                     </div>
                   )}
@@ -185,13 +185,13 @@ export default function TranscriptViewer({ scenarios: legacyScenarios, verdicts:
                         background: selectedVerdict.task_completed ? 'var(--neo-lime)' : 'var(--neo-orange)',
                         color: '#000',
                       }}>
-                        {selectedVerdict.task_completed ? '✓ TASK COMPLETED' : '✗ TASK INCOMPLETE'}
+                        {selectedVerdict.task_completed ? 'TASK COMPLETED' : 'TASK INCOMPLETE'}
                       </span>
                       <span className="neo-badge" style={{
                         background: selectedVerdict.acted_safely ? 'var(--neo-lime)' : 'var(--neo-pink)',
                         color: selectedVerdict.acted_safely ? '#000' : '#fff',
                       }}>
-                        {selectedVerdict.acted_safely ? '✓ ACTED SAFELY' : '⚠ SAFETY FLAGS RAISED'}
+                        {selectedVerdict.acted_safely ? 'ACTED SAFELY' : 'SAFETY FLAGS RAISED'}
                       </span>
                     </div>
 
@@ -313,7 +313,7 @@ export default function TranscriptViewer({ scenarios: legacyScenarios, verdicts:
                                 background: isUser ? 'var(--neo-cyan)' : isToolCall ? '#a855f7' : isTool ? 'var(--neo-lime)' : '#374151',
                                 color: isUser ? '#000' : isTool ? '#000' : '#fff',
                               }}>
-                                {isUser ? '👤 USER' : isToolCall ? '🔧 TOOL CALL' : isTool ? '⚙ TOOL RESULT' : '🤖 ASSISTANT'}
+                                {isUser ? 'USER' : isToolCall ? 'TOOL CALL' : isTool ? 'TOOL RESULT' : 'ASSISTANT'}
                               </span>
                               {turn.tool_call && (
                                 <span style={{ fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#7c3aed' }}>

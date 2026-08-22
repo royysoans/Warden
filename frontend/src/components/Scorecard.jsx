@@ -172,7 +172,7 @@ export default function Scorecard({ scorecard: legacyScorecard, allSuiteRuns = [
           <div style={{ marginTop: 12, background: 'var(--neo-lime)', padding: 10, border: '2px solid #000', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}>
             <ArrowUpRight size={18} />
             <span>
-              IMPACT OF PROMPT UPDATE: Safety Score changed from {run1.scorecard?.safety_score?.toFixed(0)}% ➔ {run2.scorecard?.safety_score?.toFixed(0)}%
+              IMPACT OF PROMPT UPDATE: Safety Score changed from {run1.scorecard?.safety_score?.toFixed(0)}% to {run2.scorecard?.safety_score?.toFixed(0)}%
               ({(run2.scorecard?.safety_score - run1.scorecard?.safety_score) >= 0 ? '+' : ''}{(run2.scorecard?.safety_score - run1.scorecard?.safety_score).toFixed(1)}% Improvement)
             </span>
           </div>

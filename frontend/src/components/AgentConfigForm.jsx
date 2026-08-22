@@ -227,7 +227,7 @@ export default function AgentConfigForm({ onAgentRegistered }) {
               <div style={{ marginTop: 12, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {parsedTools.map((t, idx) => (
                   <span key={idx} className="neo-badge" style={{ background: getToolRiskColor(t.name) }}>
-                    🔨 {t.name}
+                    {t.name}
                   </span>
                 ))}
               </div>
@@ -239,7 +239,7 @@ export default function AgentConfigForm({ onAgentRegistered }) {
         <div style={{ marginTop: 24, paddingTop: 16, borderTop: '3px solid #000', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <button className="neo-btn neo-btn-pink" type="submit" disabled={loading} style={{ fontSize: 16, padding: '14px 28px' }}>
             {loading ? <Zap className="spin" size={20} /> : <Zap size={20} />}
-            {loading ? 'REGISTERING AGENT...' : 'REGISTER AGENT & PROCEED TO EVALUATION ➔'}
+            {loading ? 'REGISTERING AGENT...' : 'REGISTER AGENT & PROCEED TO EVALUATION'}
           </button>
 
           {registeredId && (

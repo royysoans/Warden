@@ -68,8 +68,8 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
     setActivityLogs([])
     lastCountsRef.current = { scenarios: 0, verdicts: 0 }
 
-    addLog('🚀 Initializing suite evaluation pipeline...')
-    addLog(`📋 Registering run request for Agent ID: ${agentId.slice(0, 8)}…`)
+    addLog('Initializing suite evaluation pipeline...')
+    addLog(`Registering run request for Agent ID: ${agentId.slice(0, 8)}...`)
 
     try {
       const res = await fetch(`${API}/suites/run`, {
@@ -81,14 +81,14 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
       const data = await res.json()
       setSuiteRunId(data.suite_run_id)
       setStatus('pending')
-      addLog(`⚡ Suite run queued! Run ID: ${data.suite_run_id}`)
-      addLog('🔨 Capability Mapper running tool risk classification...')
+      addLog(`Suite run queued! Run ID: ${data.suite_run_id}`)
+      addLog('Capability Mapper running tool risk classification...')
 
       // Start polling interval
       intervalRef.current = setInterval(() => poll(data.suite_run_id), POLL_INTERVAL_MS)
     } catch (err) {
       setError(err.message)
-      addLog(`❌ Trigger failed: ${err.message}`)
+      addLog(`Trigger failed: ${err.message}`)
     } finally {
       setTriggering(false)
     }
@@ -97,7 +97,7 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
   async function cancelRun() {
     if (!suiteRunId || cancelling) return
     setCancelling(true)
-    addLog('🛑 Sending termination request to pipeline...')
+    addLog('Sending termination request to pipeline...')
     try {
       const res = await fetch(`${API}/suites/${suiteRunId}/cancel`, {
         method: 'POST',
@@ -105,10 +105,10 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       stopPolling()
       setStatus('cancelled')
-      addLog('🛑 Suite run successfully terminated by user.')
+      addLog('Suite run successfully terminated by user.')
     } catch (err) {
       setError(`Failed to cancel run: ${err.message}`)
-      addLog(`❌ Cancel request error: ${err.message}`)
+      addLog(`Cancel request error: ${err.message}`)
     } finally {
       setCancelling(false)
     }
@@ -130,18 +130,18 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
       const { scenarios: prevScenarioCount, verdicts: prevVerdictCount } = lastCountsRef.current
 
       if (newScenarios.length > prevScenarioCount) {
-        addLog(`🧪 Generated & executing ${newScenarios.length} evaluation scenarios...`)
+        addLog(`Generated & executing ${newScenarios.length} evaluation scenarios...`)
       }
       // Log each newly-arrived verdict (more than one can land between polls)
       for (let idx = prevVerdictCount; idx < newVerdicts.length; idx++) {
         const v = newVerdicts[idx]
         const s = newScenarios.find(sc => sc.id === v.scenario_id)
-        const sMsg = s ? `"${s.user_message.slice(0, 35)}…"` : `Scenario #${idx + 1}`
+        const sMsg = s ? `"${s.user_message.slice(0, 35)}..."` : `Scenario #${idx + 1}`
         if (v.acted_safely) {
-          addLog(`✓ Evaluated ${sMsg} ➔ SAFE`)
+          addLog(`Evaluated ${sMsg} -> SAFE`)
         } else {
           const flagNames = v.flags?.map(f => f.category).join(', ') || 'UNSAFE'
-          addLog(`🚨 Evaluated ${sMsg} ➔ FLAG: [${flagNames}]`)
+          addLog(`Evaluated ${sMsg} -> FLAG: [${flagNames}]`)
         }
       }
 
@@ -160,12 +160,12 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
       if (data.status === 'completed' || data.status === 'failed' || data.status === 'cancelled') {
         stopPolling()
         if (data.status === 'completed') {
-          addLog('🎉 Suite execution completed! Scorecard generated.')
+          addLog('Suite execution completed! Scorecard generated.')
         } else if (data.status === 'failed') {
-          addLog('❌ Pipeline reported failure status.')
+          addLog('Pipeline reported failure status.')
           setError(data.scorecard?.error || 'Suite run failed during execution.')
         } else if (data.status === 'cancelled') {
-          addLog('🛑 Pipeline run stopped: CANCELLED.')
+          addLog('Pipeline run stopped: CANCELLED.')
         }
       }
     } catch (err) {
@@ -180,7 +180,8 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
   const completedCount = verdicts.length
   const safeCount = verdicts.filter(v => v.acted_safely).length
   const unsafeCount = verdicts.filter(v => !v.acted_safely).length
-  const progressPercent = totalScenarios > 0 ? Math.round((completedCount / totalScenarios) * 100) : 0
+  const targetTotal = Math.max(totalScenarios, 8)
+  const progressPercent = targetTotal > 0 ? Math.min(100, Math.round((completedCount / targetTotal) * 100)) : 0
 
   // Currently active scenario being evaluated
   const currentEvaluatingScenario = scenarios.find(s => !verdictMap[s.id])
@@ -235,7 +236,7 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
               </>
             ) : (
               <>
-                <PlayCircle size={24} /> LAUNCH SUITE EVALUATION RUN ➔
+                <PlayCircle size={24} /> LAUNCH SUITE EVALUATION RUN
               </>
             )}
           </button>
@@ -254,7 +255,7 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
                 </>
               ) : (
                 <>
-                  <StopCircle size={22} /> TERMINATE RUN 🛑
+                  <StopCircle size={22} /> TERMINATE RUN
                 </>
               )}
             </button>
@@ -269,7 +270,7 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
             </span>
             {suiteRunId && (
               <span className="neo-badge" style={{ background: '#f3f4f6', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                ID: {suiteRunId.slice(0, 8)}…
+                ID: {suiteRunId.slice(0, 8)}...
               </span>
             )}
           </div>
@@ -288,10 +289,10 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <div style={{ fontSize: 13, fontWeight: 800, fontFamily: 'var(--font-heading)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Activity size={18} color="var(--neo-pink)" />
-              LIVE EVALUATION PROGRESS ({completedCount} / {totalScenarios || 8} SCENARIOS COMPLETED)
+              LIVE EVALUATION PROGRESS ({completedCount} / {targetTotal} SCENARIOS COMPLETED)
             </div>
             <span className="neo-badge" style={{ background: 'var(--neo-yellow)' }}>
-              {totalScenarios > 0 ? progressPercent : Math.round((completedCount / 8) * 100)}% COMPLETE
+              {progressPercent}% COMPLETE
             </span>
           </div>
 
@@ -338,7 +339,7 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
             <div className="neo-box" style={{ background: 'var(--neo-pink)', padding: 16, color: '#fff' }}>
               <div style={{ ...styles.cardStatLabel, color: '#fff' }}>SAFETY SCORE</div>
               <div style={{ ...styles.cardStatVal, color: '#fff' }}>
-                {scorecard ? `${scorecard.safety_score.toFixed(1)}%` : isRunning ? 'EVALUATING…' : 'N/A'}
+                {scorecard ? `${scorecard.safety_score.toFixed(1)}%` : isRunning ? 'EVALUATING...' : 'N/A'}
               </div>
             </div>
           </div>
@@ -351,7 +352,7 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
             <div style={{ flex: 1, maxHeight: 130, overflowY: 'auto', fontFamily: 'var(--font-mono)', fontSize: 11, lineHeight: 1.5, display: 'flex', flexDirection: 'column', gap: 4 }}>
               {activityLogs.length > 0 ? (
                 activityLogs.map((log, i) => (
-                  <div key={i} style={{ color: log.includes('🚨') || log.includes('❌') ? 'var(--neo-pink)' : log.includes('✓') || log.includes('🎉') ? 'var(--neo-lime)' : '#e5e7eb' }}>
+                  <div key={i} style={{ color: log.includes('FLAG') || log.includes('failed') ? 'var(--neo-pink)' : log.includes('SAFE') || log.includes('completed') ? 'var(--neo-lime)' : '#e5e7eb' }}>
                     {log}
                   </div>
                 ))
@@ -399,11 +400,11 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
                     </span>
                     {v ? (
                       <span className="neo-badge" style={{ background: v.acted_safely ? 'var(--neo-lime)' : 'var(--neo-pink)', color: v.acted_safely ? '#000' : '#fff' }}>
-                        {v.acted_safely ? '✓ SAFE' : '⚠ UNSAFE'}
+                        {v.acted_safely ? 'SAFE' : 'UNSAFE'}
                       </span>
                     ) : (
                       <span className="neo-badge" style={{ background: 'var(--neo-yellow)' }}>
-                        <Loader2 className="spin" size={10} style={{ display: 'inline-block', marginRight: 4 }} /> EVALUATING…
+                        <Loader2 className="spin" size={10} style={{ display: 'inline-block', marginRight: 4 }} /> EVALUATING...
                       </span>
                     )}
                   </div>
@@ -414,7 +415,7 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
 
                   {s.injected_tool_content && (
                     <div style={{ background: '#fef2f2', border: '2px solid #ef4444', padding: '6px 10px', fontSize: 11, fontWeight: 700, color: '#dc2626', marginBottom: 8 }}>
-                      ⚡ INJECTED: {s.injected_tool_content}
+                      INJECTED: {s.injected_tool_content}
                     </div>
                   )}
 
@@ -422,7 +423,7 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 6 }}>
                       {v.flags.map((f, idx) => (
                         <span key={idx} style={{ fontSize: 10, fontWeight: 800, padding: '2px 6px', background: '#fee2e2', color: '#991b1b', border: '1px solid #000' }}>
-                          🚨 {f.category.replace(/_/g, ' ')}
+                          FLAG: {f.category.replace(/_/g, ' ')}
                         </span>
                       ))}
                     </div>
