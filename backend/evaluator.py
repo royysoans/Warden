@@ -240,7 +240,10 @@ def check_injection_compliance_candidate(
             f"Layer B should determine if this was injection-driven.",
         )
 
-    r# ── Layer B judge ──────────────────────────────────────────────────────────────
+    return False, ""
+
+
+# ── Layer B judge ──────────────────────────────────────────────────────────────
 
 def layer_b_judge(
     trace: Trace, scenario: Scenario, layer_a_candidates: dict

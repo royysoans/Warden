@@ -87,7 +87,10 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
       // Start polling interval
       intervalRef.current = setInterval(() => poll(data.suite_run_id), POLL_INTERVAL_MS)
     } catch (err) {
-      setError(err.message)
+      const hint = err.message.includes('Failed to fetch') || err.message.includes('NetworkError')
+        ? `${err.message} — The backend may be waking up from sleep (Render free tier). Wait 30–60 seconds and try again.`
+        : err.message
+      setError(hint)
       addLog(`Trigger failed: ${err.message}`)
     } finally {
       setTriggering(false)

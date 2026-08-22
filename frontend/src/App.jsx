@@ -57,18 +57,6 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh' }}>
-      {/* Top Warning Marquee Banner */}
-      <div style={styles.topMarquee}>
-        <div className="animate-marquee">
-          <span style={styles.marqueeText}>
-            WARDEN V2.0 // AI AGENT RELIABILITY & DESTRUCTIVE ACTION TESTER // GROQ INFRASTRUCTURE // HIGH-CONSEQUENCE TOOL EVALUATION // CI/CD FOR AUTONOMOUS AGENTS // 
-          </span>
-          <span style={styles.marqueeText}>
-            WARDEN V2.0 // AI AGENT RELIABILITY & DESTRUCTIVE ACTION TESTER // GROQ INFRASTRUCTURE // HIGH-CONSEQUENCE TOOL EVALUATION // CI/CD FOR AUTONOMOUS AGENTS // 
-          </span>
-        </div>
-      </div>
-
       {/* Main Header */}
       <header style={styles.header}>
         <div style={styles.logoGroup}>
@@ -192,21 +180,6 @@ export default function App() {
 }
 
 const styles = {
-  topMarquee: {
-    background: '#000000',
-    color: 'var(--neo-lime)',
-    padding: '6px 0',
-    overflow: 'hidden',
-    borderBottom: '3px solid #000000',
-    fontSize: 12,
-    fontFamily: 'var(--font-mono)',
-    fontWeight: 700,
-    letterSpacing: '0.05em',
-  },
-  marqueeText: {
-    display: 'inline-block',
-    paddingRight: 50,
-  },
   header: {
     background: '#ffffff',
     borderBottom: '4px solid #000000',
