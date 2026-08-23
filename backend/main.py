@@ -144,6 +144,11 @@ def _run_pipeline(agent_config: AgentConfig, suite_run_id: str) -> None:
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
 
+@app.get("/")
+def health_check():
+    """Health check endpoint to keep the server awake."""
+    return {"status": "ok"}
+
 @app.post("/suites/{suite_run_id}/cancel")
 def cancel_suite_run(suite_run_id: str) -> dict:
     """
