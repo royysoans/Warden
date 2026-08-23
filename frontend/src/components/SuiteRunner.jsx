@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { PlayCircle, StopCircle, CheckCircle2, XCircle, Loader2, ShieldAlert, AlertTriangle, Layers, Terminal, Activity, HelpCircle, Eye } from 'lucide-react'
+import { PlayCircle, StopCircle, CheckCircle2, XCircle, Loader2, ShieldAlert, AlertTriangle, Layers, Terminal, Activity, HelpCircle, Eye, Clock } from 'lucide-react'
 
 const API = import.meta.env.VITE_API_URL || '/api'
 const POLL_INTERVAL_MS = 2000
@@ -18,11 +18,13 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
   const [activityLogs, setActivityLogs] = useState([])
   const intervalRef = useRef(null)
   const [selectedScenarioId, setSelectedScenarioId] = useState(null)
+  const [now, setNow] = useState(Date.now())
+  const [lastDataReceivedMs, setLastDataReceivedMs] = useState(Date.now())
   // Tracks the last-seen scenario/verdict counts so the activity log only fires
   // on genuinely new items. A plain closure over `scenarios`/`verdicts` would be
   // stale inside the polling interval (it captures the values from the render
   // that started polling — empty arrays), so we use a ref every poll updates.
-  const lastCountsRef = useRef({ scenarios: 0, verdicts: 0 })
+  const lastCountsRef = useRef({ scenarios: 0, verdicts: 0, status: null })
 
   function stopPolling() {
     if (intervalRef.current) {
@@ -67,8 +69,11 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
     setScorecard(null)
     setStatus(null)
     setTriggering(true)
+    setLastDataReceivedMs(Date.now())
+    setNow(Date.now())
+    addLog(`Initiating test suite for agent: ${agentId}...`)
     setActivityLogs([])
-    lastCountsRef.current = { scenarios: 0, verdicts: 0 }
+    lastCountsRef.current = { scenarios: 0, verdicts: 0, status: null, traceCount: 0 }
 
     addLog('Initializing suite evaluation pipeline...')
     addLog(`Registering run request for Agent ID: ${agentId.slice(0, 8)}...`)
@@ -132,7 +137,7 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
       const newTraces = data.traces || {}
 
       // Compare against last-seen counts (a ref, not stale closure state)
-      const { scenarios: prevScenarioCount, verdicts: prevVerdictCount } = lastCountsRef.current
+      const { scenarios: prevScenarioCount, verdicts: prevVerdictCount, status: prevStatus, traceCount: prevTraceCount } = lastCountsRef.current
 
       if (newScenarios.length > prevScenarioCount) {
         addLog(`Generated & executing ${newScenarios.length} evaluation scenarios...`)
@@ -150,7 +155,13 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
         }
       }
 
-      lastCountsRef.current = { scenarios: newScenarios.length, verdicts: newVerdicts.length }
+      setNow(Date.now())
+      const currentTraceCount = Object.keys(newTraces).reduce((acc, k) => acc + newTraces[k].length, 0)
+      if (newScenarios.length > prevScenarioCount || newVerdicts.length > prevVerdictCount || data.status !== prevStatus || currentTraceCount > prevTraceCount) {
+        setLastDataReceivedMs(Date.now())
+      }
+
+      lastCountsRef.current = { scenarios: newScenarios.length, verdicts: newVerdicts.length, status: data.status, traceCount: currentTraceCount }
 
       setScenarios(newScenarios)
       setVerdicts(newVerdicts)
@@ -223,6 +234,12 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
       {!agentId && (
         <div style={styles.warningBox}>
           <AlertTriangle size={20} /> REGISTER AN AGENT IN STEP 01 TO ENABLE SUITE EXECUTION.
+        </div>
+      )}
+
+      {isRunning && (now - lastDataReceivedMs > 12000) && (
+        <div style={styles.rateLimitBox}>
+          <span>The API call might take some time. Hang tight!</span>
         </div>
       )}
 
@@ -627,6 +644,18 @@ const styles = {
     boxShadow: '4px 4px 0px #000',
     padding: '12px 16px',
     fontWeight: 700,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+  },
+  rateLimitBox: {
+    marginTop: 16,
+    background: 'var(--neo-yellow)',
+    color: '#111827',
+    border: '3px solid #000',
+    boxShadow: '4px 4px 0px #000',
+    padding: '12px 16px',
+    fontWeight: 600,
     display: 'flex',
     alignItems: 'center',
     gap: 10,
