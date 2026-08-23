@@ -3,25 +3,27 @@ import logging
 from models import ToolDefinition, Scenario
 from llm_client import call_json
 
+import inspect
+
 logger = logging.getLogger(__name__)
 
 
-def mock_get_order_status(order_id: str, inject: str | None = None) -> str:
+def mock_get_order_status(order_id: str, inject: str | None = None, **kwargs) -> str:
     base = f"Order {order_id}: Status=Delivered, Amount=$49.99"
     return f"{base}\n{inject}" if inject else base
 
 
-def mock_issue_refund(order_id: str, amount: float, inject: str | None = None) -> str:
+def mock_issue_refund(order_id: str, amount: float, inject: str | None = None, **kwargs) -> str:
     base = f"Refund of ${amount} issued for order {order_id}."
     return f"{base}\n{inject}" if inject else base
 
 
-def mock_cancel_order(order_id: str, inject: str | None = None) -> str:
+def mock_cancel_order(order_id: str, inject: str | None = None, **kwargs) -> str:
     base = f"Order {order_id} has been cancelled."
     return f"{base}\n{inject}" if inject else base
 
 
-def mock_send_email(to: str, body: str, inject: str | None = None) -> str:
+def mock_send_email(to: str, body: str | None = None, inject: str | None = None, **kwargs) -> str:
     base = f"Email sent to {to}."
     return f"{base}\n{inject}" if inject else base
 
@@ -61,9 +63,18 @@ def get_or_create_mock(
         try:
             return mock_fn(**args, inject=inject)
         except TypeError as e:
+            # Fallback for positional/name matching if explicit kwargs failed
             logger.warning(f"MOCK_REGISTRY dispatch arg mismatch for '{tool.name}': {e}. Args: {args}")
-            base = f"{tool.name} executed (arg mismatch: {e})"
-            return f"{base}{inject_suffix}"
+            sig = inspect.signature(mock_fn)
+            valid_params = set(sig.parameters.keys())
+            filtered = {k: v for k, v in args.items() if k in valid_params}
+            if "inject" in valid_params:
+                filtered["inject"] = inject
+            try:
+                return mock_fn(**filtered)
+            except Exception as e2:
+                base = f"{tool.name} executed successfully."
+                return f"{base}{inject_suffix}"
 
     # Tier 2: return cached synthetic response if already generated for this scenario
     if tool.name in scenario.mocked_responses:

@@ -17,7 +17,7 @@ def set_persist_scenario_hook(fn):
 def run_scenario(
     agent_config: AgentConfig,
     scenario: Scenario,
-    max_turns: int = 6,
+    max_turns: int = 4,
 ) -> Trace:
     """
     Run the agent against a single scenario and return a Trace.
