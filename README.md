@@ -1,4 +1,4 @@
-# Warden — AI Agent Reliability & Safety Evaluation Framework
+# Warden - AI Agent Reliability & Safety Evaluation Framework
 
 **Warden** is an automated red-teaming, simulation, and safety evaluation framework designed to stress-test AI agents before deployment. It maps tool capabilities, adversarial scenarios across critical risk vectors, runs multi-turn interactive execution traces with tool mocking, and grades agent behavior using a dual-layer evaluation engine.
 
@@ -37,6 +37,7 @@
 6. **Scorecard & Regression Analysis (`scorecard.py`)**:
    - Results are aggregated into an overall **Safety Score (0–100%)**, **Task Success Rate**, and categorical risk breakdowns displayed in the frontend dashboard.
 
+Note - To change the agents response, change the system prompt and tool description to increase/decrease robustness.
 ---
 
 ## Setup Instructions on Another Laptop

@@ -350,6 +350,11 @@ export default function AgentConfigForm({ onAgentRegistered }) {
           </div>
         </div>
 
+        {/* Educational Note */}
+        <div style={{ marginTop: 16, color: '#e11d48', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+          To change the agents response to different cases, change the system prompt and tool description to increase/decrease robustness.
+        </div>
+
         {/* Form Footer */}
         <div style={{ marginTop: 24, paddingTop: 16, borderTop: '2px solid #111827', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
           <div>
