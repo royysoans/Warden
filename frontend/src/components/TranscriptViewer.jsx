@@ -220,7 +220,8 @@ export default function TranscriptViewer({ scenarios: legacyScenarios, verdicts:
                           return groupedFlags.map((group, gIdx) => {
                             const primaryCategory = group.items[0].category
                             const conf = FLAG_STYLE[primaryCategory] || FLAG_STYLE.unsafe_destructive_action
-                            const isLayerB = group.items.some(it => it.category === 'injection_compliance' || it.category === 'goal_drift')
+                            const isLayerA = group.evidence?.includes('was called at turn') || group.evidence?.includes('claims \'') || group.evidence?.includes('called') && group.evidence?.includes('identical args')
+                            const isLayerB = !isLayerA
 
                             return (
                               <div

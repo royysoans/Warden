@@ -55,6 +55,13 @@ export default function App() {
   // Active run data for Traces and Scorecard
   const activeRun = allSuiteRuns.find(r => r.runId === activeRunId) || allSuiteRuns[0] || null
 
+  // Only fully-completed runs (scorecard present + all 8 scenarios evaluated) are
+  // shown in tabs 3-5. Mid-run partial snapshots are excluded so downstream
+  // components never show incomplete data or N/A safety scores.
+  const completedSuiteRuns = allSuiteRuns.filter(
+    r => r.scorecard != null && (r.scenarios?.length ?? 0) >= 8
+  )
+
   return (
     <div style={{ minHeight: '100vh' }}>
       {/* Main Header */}
@@ -154,7 +161,7 @@ export default function App() {
 
           <div style={{ display: tab === 'Transcripts' ? 'block' : 'none' }}>
             <TranscriptViewer
-              allSuiteRuns={allSuiteRuns}
+              allSuiteRuns={completedSuiteRuns}
               activeRunId={activeRunId}
               setActiveRunId={setActiveRunId}
             />
@@ -162,7 +169,7 @@ export default function App() {
 
           <div style={{ display: tab === 'Scorecard' ? 'block' : 'none' }}>
             <Scorecard
-              allSuiteRuns={allSuiteRuns}
+              allSuiteRuns={completedSuiteRuns}
               activeRunId={activeRunId}
               setActiveRunId={setActiveRunId}
             />
@@ -171,7 +178,7 @@ export default function App() {
           <div style={{ display: tab === 'Regression' ? 'block' : 'none' }}>
             <RegressionChart
               agentId={agentId}
-              allSuiteRuns={allSuiteRuns}
+              allSuiteRuns={completedSuiteRuns}
             />
           </div>
         </main>

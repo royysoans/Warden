@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { PlayCircle, StopCircle, CheckCircle2, XCircle, Loader2, ShieldAlert, AlertTriangle, Layers, Terminal, Activity, HelpCircle } from 'lucide-react'
+import { PlayCircle, StopCircle, CheckCircle2, XCircle, Loader2, ShieldAlert, AlertTriangle, Layers, Terminal, Activity, HelpCircle, Eye } from 'lucide-react'
 
 const API = import.meta.env.VITE_API_URL || '/api'
 const POLL_INTERVAL_MS = 2000
@@ -17,6 +17,7 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
   const [filterCategory, setFilterCategory] = useState('ALL')
   const [activityLogs, setActivityLogs] = useState([])
   const intervalRef = useRef(null)
+  const [selectedScenarioId, setSelectedScenarioId] = useState(null)
   // Tracks the last-seen scenario/verdict counts so the activity log only fires
   // on genuinely new items. A plain closure over `scenarios`/`verdicts` would be
   // stale inside the polling interval (it captures the values from the render
@@ -45,6 +46,7 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
       setScorecard(null)
       setError(null)
       setActivityLogs([])
+      setSelectedScenarioId(null)
       lastCountsRef.current = { scenarios: 0, verdicts: 0 }
     }
   }, [agentId])
@@ -395,8 +397,23 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
           <div style={styles.scenarioGrid}>
             {filteredScenarios.map(s => {
               const v = verdictMap[s.id]
+              const hasVerdict = !!v
+              const isSelected = selectedScenarioId === s.id
               return (
-                <div key={s.id} className="neo-box" style={styles.scenarioCard}>
+                <div
+                  key={s.id}
+                  className="neo-box"
+                  onClick={() => hasVerdict && setSelectedScenarioId(isSelected ? null : s.id)}
+                  style={{
+                    ...styles.scenarioCard,
+                    cursor: hasVerdict ? 'pointer' : 'default',
+                    outline: isSelected ? '3px solid var(--neo-cyan)' : 'none',
+                    outlineOffset: 2,
+                    transform: isSelected ? 'translate(-2px, -2px)' : 'none',
+                    boxShadow: isSelected ? '5px 5px 0px #000' : '3px 3px 0px #000',
+                    transition: 'all 0.12s ease',
+                  }}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                     <span className="neo-badge" style={{ background: getCategoryBg(s.category), color: s.category === 'adversarial_injection' ? '#fff' : '#000' }}>
                       {s.category.replace('_', ' ').toUpperCase()}
@@ -431,10 +448,131 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
                       ))}
                     </div>
                   )}
+
+                  {hasVerdict && (
+                    <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
+                      <span
+                        className="neo-badge"
+                        style={{
+                          background: isSelected ? 'var(--neo-cyan)' : '#000000',
+                          color: isSelected ? '#000000' : '#ffffff',
+                          border: '2px solid #000000',
+                          boxShadow: isSelected ? '1px 1px 0px #000' : '2px 2px 0px #000',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          fontSize: 11,
+                          fontWeight: 800,
+                          padding: '4px 10px',
+                          letterSpacing: '0.04em',
+                        }}
+                      >
+                        <Eye size={13} />
+                        {isSelected ? 'CLOSE TRACE ▲' : 'VIEW TRACE ▼'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )
             })}
           </div>
+
+          {/* Inline Trace Panel — shown when a card is selected */}
+          {selectedScenarioId && (() => {
+            const s = scenarios.find(sc => sc.id === selectedScenarioId)
+            const v = verdictMap[selectedScenarioId]
+            const traceData = traces[selectedScenarioId]
+            const traceTurns = traceData?.turns || []
+            if (!s) return null
+            return (
+              <div style={{
+                marginTop: 20,
+                border: '3px solid #000',
+                boxShadow: '6px 6px 0px var(--neo-cyan)',
+                background: '#0f172a',
+                borderRadius: 8,
+                overflow: 'hidden',
+                animation: 'slideDown 0.18s ease',
+              }}>
+                {/* Panel Header */}
+                <div style={{
+                  background: 'var(--neo-cyan)',
+                  borderBottom: '3px solid #000',
+                  padding: '10px 16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                  <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 900, fontSize: 13, color: '#000', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Terminal size={16} />
+                    CONVERSATION TRACE — <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>{selectedScenarioId.slice(0, 8)}…</span>
+                    <span className="neo-badge" style={{ background: getCategoryBg(s.category), color: s.category === 'adversarial_injection' ? '#fff' : '#000', fontSize: 10 }}>
+                      {s.category.replace('_', ' ').toUpperCase()}
+                    </span>
+                    {v && (
+                      <span className="neo-badge" style={{ background: v.acted_safely ? 'var(--neo-lime)' : 'var(--neo-pink)', color: v.acted_safely ? '#000' : '#fff', fontSize: 10 }}>
+                        {v.acted_safely ? '✓ SAFE' : '⚠ UNSAFE'}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setSelectedScenarioId(null)}
+                    style={{ background: '#000', color: '#fff', border: '2px solid #000', padding: '4px 10px', fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}
+                  >
+                    ✕ CLOSE
+                  </button>
+                </div>
+
+                {/* Turns */}
+                <div style={{ padding: 16, maxHeight: 420, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {traceTurns.length === 0 ? (
+                    <div style={{ color: '#6b7280', fontFamily: 'var(--font-mono)', fontSize: 12 }}>No trace data available yet.</div>
+                  ) : (
+                    traceTurns.map((turn, idx) => {
+                      const isUser = turn.role === 'user'
+                      const isTool = turn.role === 'tool'
+                      const isToolCall = turn.role === 'assistant' && turn.tool_call
+                      const roleColor = isUser ? 'var(--neo-cyan)' : isTool ? 'var(--neo-lime)' : isToolCall ? 'var(--neo-yellow)' : 'var(--neo-pink)'
+                      const roleLabel = isUser ? 'USER' : isTool ? 'TOOL RESULT' : isToolCall ? `TOOL CALL → ${turn.tool_call}` : 'ASSISTANT'
+                      return (
+                        <div key={idx} style={{
+                          borderLeft: `3px solid ${roleColor}`,
+                          paddingLeft: 12,
+                          paddingTop: 6,
+                          paddingBottom: 6,
+                        }}>
+                          <div style={{ fontSize: 10, fontFamily: 'var(--font-heading)', fontWeight: 900, color: roleColor, marginBottom: 4, letterSpacing: '0.05em' }}>
+                            {roleLabel}
+                          </div>
+                          {isToolCall ? (
+                            <pre style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: '#e5e7eb', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                              {JSON.stringify(turn.tool_call_args || {}, null, 2)}
+                            </pre>
+                          ) : (
+                            <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: '#e5e7eb', lineHeight: 1.55, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                              {turn.content || ''}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+
+                {/* Flags summary at bottom if unsafe */}
+                {v && v.flags?.length > 0 && (
+                  <div style={{ borderTop: '2px solid #374151', padding: '10px 16px', background: '#1e293b', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, fontFamily: 'var(--font-heading)', fontWeight: 800, color: 'var(--neo-pink)' }}>FLAGS RAISED:</span>
+                    {v.flags.map((f, i) => (
+                      <span key={i} style={{ fontSize: 10, fontWeight: 800, padding: '3px 8px', background: 'var(--neo-pink)', color: '#000', border: '1px solid #000', borderRadius: 3 }}>
+                        {f.category.replace(/_/g, ' ').toUpperCase()}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </div>
       )}
     </div>
@@ -521,14 +659,15 @@ const styles = {
     gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
     gap: 16,
     marginTop: 12,
-    maxHeight: 460,
-    overflowY: 'auto',
-    paddingRight: 6,
   },
   scenarioCard: {
     padding: 16,
     background: '#ffffff',
     border: '3px solid #000',
     boxShadow: '3px 3px 0px #000',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    minHeight: 170,
   },
 }
