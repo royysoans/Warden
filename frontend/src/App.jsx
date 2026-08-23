@@ -61,7 +61,7 @@ export default function App() {
       <header style={styles.header}>
         <div style={styles.logoGroup}>
           <div style={styles.logoBadge}>
-            <ShieldAlert size={28} strokeWidth={2.5} />
+            <ShieldAlert size={26} strokeWidth={2.5} />
           </div>
           <div>
             <div style={styles.logoTitle}>WARDEN</div>
@@ -70,15 +70,15 @@ export default function App() {
         </div>
 
         <div style={styles.statusGroup}>
-          <div className="neo-badge" style={{ background: 'var(--neo-lime)', color: '#000' }}>
+          <div className="neo-badge" style={{ background: 'var(--neo-lime)', color: '#111827' }}>
             <span className="pulse-dot"></span> PIPELINE ACTIVE
           </div>
           {agentId ? (
-            <div className="neo-badge" style={{ background: 'var(--neo-pink)', color: '#fff' }}>
+            <div className="neo-badge" style={{ background: 'var(--neo-pink)', color: '#111827' }}>
               AGENT: <span style={{ fontFamily: 'var(--font-mono)' }}>{agentName || 'SupportBot'}</span> ({agentId.slice(0, 6)}…)
             </div>
           ) : (
-            <div className="neo-badge" style={{ background: '#e5e7eb', color: '#6b7280' }}>
+            <div className="neo-badge" style={{ background: '#f3f4f6', color: '#6b7280', border: '1.5px solid #111827' }}>
               NO AGENT LOADED
             </div>
           )}
@@ -98,14 +98,15 @@ export default function App() {
                 onClick={() => setTab(t.id)}
                 style={{
                   ...styles.tabBtn,
-                  background: isActive ? t.color : '#ffffff',
-                  color: isActive && t.id === 'Transcripts' ? '#ffffff' : '#000000',
-                  boxShadow: isActive ? '5px 5px 0px #000' : '3px 3px 0px #000',
-                  transform: isActive ? 'translate(-2px, -2px)' : 'none',
+                  background: isActive ? t.color : 'var(--neo-card-bg)',
+                  color: '#111827',
+                  boxShadow: isActive ? '3px 3px 0px #111827' : '2px 2px 0px #111827',
+                  transform: isActive ? 'translate(-1px, -1px)' : 'none',
                   fontWeight: isActive ? 800 : 700,
+                  borderColor: '#111827',
                 }}
               >
-                <Icon size={18} strokeWidth={2.5} />
+                <Icon size={18} strokeWidth={2.4} />
                 <span>{t.label}</span>
               </button>
             )
@@ -116,13 +117,13 @@ export default function App() {
         {agentId && (
           <div className="neo-box" style={styles.agentBar}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ background: 'var(--neo-cyan)', padding: 6, border: '2px solid #000' }}>
+              <div style={{ background: 'var(--neo-cyan)', color: '#111827', padding: 6, border: '2px solid #111827', borderRadius: 6 }}>
                 <Sparkles size={20} />
               </div>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#4b5563' }}>ACTIVE TARGET AGENT & VERSION</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#4b5563' }}>ACTIVE TARGET AGENT & VERSION</div>
                 <div style={{ fontSize: 16, fontWeight: 800, fontFamily: 'var(--font-heading)' }}>
-                  {agentName} <span className="neo-badge" style={{ background: 'var(--neo-yellow)', marginLeft: 6 }}>{agentVersion || 'v1.0'}</span> <code style={{ fontSize: 12, background: '#f3f4f6', padding: '2px 6px', border: '1px solid #000' }}>ID: {agentId.slice(0, 8)}</code>
+                  {agentName} <span className="neo-badge" style={{ background: 'var(--neo-yellow)', marginLeft: 6 }}>{agentVersion || 'v1.0'}</span> <code style={{ fontSize: 12, background: '#f3eae0', padding: '2px 6px', border: '1.5px solid #111827', borderRadius: 4 }}>ID: {agentId.slice(0, 8)}</code>
                 </div>
               </div>
             </div>
@@ -130,7 +131,7 @@ export default function App() {
             {/* Completed Runs History Counter */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ fontSize: 12, fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
-                SUITE RUNS SAVED: <span className="neo-badge" style={{ background: 'var(--neo-lime)', color: '#000' }}>{allSuiteRuns.length} RUNS</span>
+                SUITE RUNS SAVED: <span className="neo-badge" style={{ background: 'var(--neo-lime)', color: '#111827' }}>{allSuiteRuns.length} RUNS</span>
               </div>
             </div>
           </div>
@@ -181,15 +182,15 @@ export default function App() {
 
 const styles = {
   header: {
-    background: '#ffffff',
-    borderBottom: '4px solid #000000',
-    padding: '16px 32px',
+    background: 'var(--neo-card-bg)',
+    borderBottom: '2.5px solid #111827',
+    padding: '14px 28px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: 16,
-    boxShadow: '0 4px 0px rgba(0,0,0,0.1)',
+    boxShadow: '0 3px 0px rgba(17, 24, 39, 0.08)',
   },
   logoGroup: {
     display: 'flex',
@@ -198,20 +199,22 @@ const styles = {
   },
   logoBadge: {
     background: 'var(--neo-pink)',
-    color: '#ffffff',
-    padding: 10,
-    border: '3px solid #000000',
-    boxShadow: '3px 3px 0px #000000',
+    color: '#111827',
+    padding: 8,
+    border: '2px solid #111827',
+    borderRadius: 6,
+    boxShadow: '2.5px 2.5px 0px #111827',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
   },
   logoTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontFamily: 'var(--font-heading)',
     fontWeight: 900,
     lineHeight: 1,
     letterSpacing: '-0.03em',
+    color: '#111827',
   },
   logoSubtitle: {
     fontSize: 11,
@@ -239,8 +242,9 @@ const styles = {
   tabBtn: {
     flex: 1,
     minWidth: 160,
-    padding: '12px 16px',
-    border: '3px solid #000000',
+    padding: '11px 16px',
+    border: '2px solid #111827',
+    borderRadius: 6,
     cursor: 'pointer',
     fontFamily: 'var(--font-heading)',
     fontSize: 13,
@@ -248,11 +252,12 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    transition: 'all 0.1s ease',
+    userSelect: 'none',
+    transition: 'all 0.1s ease-in-out',
   },
   agentBar: {
     padding: '12px 20px',
-    background: '#ffffff',
+    background: 'var(--neo-card-bg)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',

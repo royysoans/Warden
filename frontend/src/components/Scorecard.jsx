@@ -20,7 +20,7 @@ export default function Scorecard({ scorecard: legacyScorecard, allSuiteRuns = [
 
   if (!scorecard) {
     return (
-      <div className="neo-box-lg" style={{ background: '#ffffff', padding: 28 }}>
+      <div className="neo-box-lg" style={{ background: 'var(--neo-card-bg)', padding: 28 }}>
         <div style={styles.headerBox}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={styles.iconSquare}>
@@ -61,7 +61,7 @@ export default function Scorecard({ scorecard: legacyScorecard, allSuiteRuns = [
     .sort((a, b) => b.value - a.value)
 
   return (
-    <div className="neo-box-lg" style={{ background: '#ffffff', padding: 28 }}>
+    <div className="neo-box-lg" style={{ background: 'var(--neo-card-bg)', padding: 28 }}>
       {/* Header Banner */}
       <div style={styles.headerBox}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

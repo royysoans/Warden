@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Cpu, Zap, CheckCircle2, AlertCircle, Code, ShieldCheck, Sparkles } from 'lucide-react'
+import { Cpu, Zap, CheckCircle2, AlertCircle, Code, ShieldCheck, Sparkles, Tag, FileText } from 'lucide-react'
 
 const API = import.meta.env.VITE_API_URL || '/api'
 
@@ -232,29 +232,28 @@ export default function AgentConfigForm({ onAgentRegistered }) {
   }
 
   return (
-    <div className="neo-box-lg" style={{ background: '#ffffff', padding: 28 }}>
-      {/* Header Banner */}
+    <div className="neo-box-lg" style={{ padding: 24 }}>
+      {/* Form Header */}
       <div style={styles.headerBox}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={styles.iconSquare}>
-            <Cpu size={24} color="#000" />
+            <Cpu size={24} color="#111827" />
           </div>
           <div>
-            <h2 style={{ fontSize: 22, color: '#000' }}>REGISTER TARGET AGENT</h2>
-            <p style={{ fontSize: 12, fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#4b5563' }}>
+            <h2 style={{ fontSize: 22, color: '#111827' }}>REGISTER TARGET AGENT</h2>
+            <p style={{ fontSize: 12, fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#374151' }}>
               CONFIGURE AGENT SYSTEM PROMPT & TOOL CAPABILITIES FOR AUTOMATED EVALUATION
             </p>
           </div>
         </div>
-        <div className="neo-badge" style={{ background: 'var(--neo-yellow)' }}>
+        <div className="neo-badge" style={{ background: '#ffffff', color: '#111827' }}>
           STEP 1 / 5
         </div>
       </div>
 
-      {/* Preset Quick Select Buttons */}
-      <div style={{ margin: '20px 0', padding: 16, background: '#fdfbf7', border: '3px solid #000' }}>
-        <div style={{ fontSize: 12, fontWeight: 800, fontFamily: 'var(--font-heading)', textTransform: 'uppercase', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Sparkles size={14} color="var(--neo-pink)" /> QUICK PRESETS (LOAD READY CONFIGS)
+      <div style={{ margin: '20px 0', padding: 16, background: '#fef7ee', border: '2px solid #111827', borderRadius: 8, boxShadow: '2px 2px 0px #111827' }}>
+        <div style={{ fontSize: 12, fontWeight: 800, fontFamily: 'var(--font-heading)', textTransform: 'uppercase', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6, color: '#111827' }}>
+          <Sparkles size={14} color="#e11d48" /> QUICK PRESETS (LOAD READY CONFIGS)
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {Object.keys(PRESETS).map(key => (
@@ -264,11 +263,13 @@ export default function AgentConfigForm({ onAgentRegistered }) {
               onClick={() => loadPreset(key)}
               style={{
                 ...styles.presetBtn,
-                background: selectedPreset === key ? 'var(--neo-pink)' : '#ffffff',
-                color: selectedPreset === key ? '#ffffff' : '#000000',
+                background: selectedPreset === key ? 'var(--neo-cyan)' : '#ffffff',
+                color: '#111827',
+                transform: selectedPreset === key ? 'translate(-1px, -1px)' : 'none',
+                boxShadow: selectedPreset === key ? '3px 3px 0px #111827' : '2px 2px 0px #111827',
               }}
             >
-              {PRESETS[key].name}
+              {PRESETS[key].name} ({key})
             </button>
           ))}
         </div>
@@ -276,27 +277,45 @@ export default function AgentConfigForm({ onAgentRegistered }) {
 
       <form onSubmit={handleSubmit}>
         <div style={styles.formGrid}>
-          {/* Left Column: Agent Metadata */}
-          <div>
-            <div style={{ marginBottom: 16 }}>
-              <label className="neo-label">AGENT NAME</label>
-              <input className="neo-input" value={name} onChange={e => setName(e.target.value)} required placeholder="e.g. CustomerSupportBot" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div>
+              <label className="neo-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Cpu size={16} /> AGENT NAME
+              </label>
+              <input
+                type="text"
+                className="neo-input"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="e.g. SupportBot, RefundAgent"
+                required
+              />
             </div>
 
-            <div style={{ marginBottom: 16 }}>
-              <label className="neo-label">VERSION LABEL</label>
-              <input className="neo-input" value={versionLabel} onChange={e => setVersionLabel(e.target.value)} required placeholder="e.g. v1.0.0" />
+            <div>
+              <label className="neo-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Tag size={16} /> VERSION LABEL (ITERATION TAG)
+              </label>
+              <input
+                type="text"
+                className="neo-input"
+                value={versionLabel}
+                onChange={e => setVersionLabel(e.target.value)}
+                placeholder="e.g. v1.0, prompt-v2-guarded"
+              />
             </div>
 
-            <div style={{ marginBottom: 16 }}>
-              <label className="neo-label">SYSTEM PROMPT (BEHAVIOR RULES)</label>
+            <div>
+              <label className="neo-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <FileText size={16} /> SYSTEM PROMPT
+              </label>
               <textarea
                 className="neo-input"
-                style={{ height: 160, fontFamily: 'var(--font-mono)', fontSize: 13, resize: 'vertical' }}
+                rows={12}
                 value={systemPrompt}
                 onChange={e => setSystemPrompt(e.target.value)}
+                placeholder="Enter system prompt for target agent..."
                 required
-                placeholder="Enter system prompt for the target agent..."
               />
             </div>
           </div>
@@ -305,14 +324,14 @@ export default function AgentConfigForm({ onAgentRegistered }) {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <label className="neo-label" style={{ marginBottom: 0 }}>TOOLS SPECIFICATION (JSON SCHEMA)</label>
-              <span className="neo-badge" style={{ background: jsonValid ? 'var(--neo-lime)' : 'var(--neo-pink)', color: jsonValid ? '#000' : '#fff' }}>
+              <span className="neo-badge" style={{ background: jsonValid ? 'var(--neo-lime)' : 'var(--neo-pink)', color: '#111827' }}>
                 {jsonValid ? `VALID (${parsedTools.length} TOOLS)` : 'INVALID JSON'}
               </span>
             </div>
 
             <textarea
               className="neo-input"
-              style={{ height: 250, fontFamily: 'var(--font-mono)', fontSize: 12, resize: 'vertical', background: '#fafafa' }}
+              style={{ height: 250, fontFamily: 'var(--font-mono)', fontSize: 12, resize: 'vertical' }}
               value={toolsJson}
               onChange={e => setToolsJson(e.target.value)}
               required
@@ -322,7 +341,7 @@ export default function AgentConfigForm({ onAgentRegistered }) {
             {jsonValid && parsedTools.length > 0 && (
               <div style={{ marginTop: 12, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {parsedTools.map((t, idx) => (
-                  <span key={idx} className="neo-badge" style={{ background: getToolRiskColor(t.name) }}>
+                  <span key={idx} className="neo-badge" style={{ background: getToolRiskColor(t.name), color: '#111827' }}>
                     {t.name}
                   </span>
                 ))}
@@ -332,9 +351,9 @@ export default function AgentConfigForm({ onAgentRegistered }) {
         </div>
 
         {/* Form Footer */}
-        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '3px solid #000', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '2px solid #111827', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <button className="neo-btn neo-btn-pink" type="submit" disabled={loading} style={{ fontSize: 16, padding: '14px 28px' }}>
+            <button className="neo-btn neo-btn-pink" type="submit" disabled={loading} style={{ fontSize: 15, padding: '12px 24px' }}>
               {loading ? <Zap className="spin" size={20} /> : <Zap size={20} />}
               {loading ? 'REGISTERING AGENT...' : 'REGISTER AGENT & PROCEED TO EVALUATION'}
             </button>
@@ -376,18 +395,20 @@ function getToolRiskColor(toolName) {
 const styles = {
   headerBox: {
     background: 'var(--neo-yellow)',
-    border: '3px solid #000',
+    border: '2px solid #111827',
+    borderRadius: 8,
     padding: '16px 20px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: 12,
-    boxShadow: '4px 4px 0px #000',
+    boxShadow: '3px 3px 0px #111827',
   },
   iconSquare: {
     background: '#ffffff',
-    border: '3px solid #000',
+    border: '2px solid #111827',
+    borderRadius: 6,
     padding: 8,
     display: 'flex',
     alignItems: 'center',
@@ -395,13 +416,14 @@ const styles = {
   },
   presetBtn: {
     fontFamily: 'var(--font-heading)',
-    fontWeight: 700,
+    fontWeight: 800,
     fontSize: 12,
-    padding: '6px 14px',
-    border: '2px solid #000',
-    boxShadow: '2px 2px 0px #000',
+    padding: '7px 14px',
+    border: '2px solid #111827',
+    borderRadius: 6,
     cursor: 'pointer',
-    transition: 'all 0.1s ease',
+    userSelect: 'none',
+    transition: 'all 0.1s ease-in-out',
   },
   formGrid: {
     display: 'grid',
@@ -412,11 +434,12 @@ const styles = {
   errorBox: {
     marginTop: 20,
     background: 'var(--neo-pink)',
-    color: '#ffffff',
-    border: '3px solid #000',
-    boxShadow: '4px 4px 0px #000',
+    color: '#111827',
+    border: '2px solid #111827',
+    boxShadow: '3px 3px 0px #111827',
+    borderRadius: 6,
     padding: '12px 16px',
-    fontWeight: 700,
+    fontWeight: 800,
     display: 'flex',
     alignItems: 'center',
     gap: 10,
