@@ -174,6 +174,7 @@ export default function AgentConfigForm({ onAgentRegistered }) {
   const [registeredId, setRegisteredId] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [showSlowWarning, setShowSlowWarning] = useState(false)
 
   function loadPreset(key) {
     const p = PRESETS[key]
@@ -198,11 +199,16 @@ export default function AgentConfigForm({ onAgentRegistered }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
+    setShowSlowWarning(false)
     if (!jsonValid) {
       setError('Invalid Tools JSON format. Must be a valid JSON array of tool objects.')
       return
     }
     setLoading(true)
+    const timer = setTimeout(() => {
+      setShowSlowWarning(true)
+    }, 5000)
+
     try {
       const res = await fetch(`${API}/agents`, {
         method: 'POST',
@@ -219,7 +225,9 @@ export default function AgentConfigForm({ onAgentRegistered }) {
     } catch (err) {
       setError(err.message)
     } finally {
+      clearTimeout(timer)
       setLoading(false)
+      setShowSlowWarning(false)
     }
   }
 
@@ -324,11 +332,18 @@ export default function AgentConfigForm({ onAgentRegistered }) {
         </div>
 
         {/* Form Footer */}
-        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '3px solid #000', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-          <button className="neo-btn neo-btn-pink" type="submit" disabled={loading} style={{ fontSize: 16, padding: '14px 28px' }}>
-            {loading ? <Zap className="spin" size={20} /> : <Zap size={20} />}
-            {loading ? 'REGISTERING AGENT...' : 'REGISTER AGENT & PROCEED TO EVALUATION'}
-          </button>
+        <div style={{ marginTop: 24, paddingTop: 16, borderTop: '3px solid #000', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+          <div>
+            <button className="neo-btn neo-btn-pink" type="submit" disabled={loading} style={{ fontSize: 16, padding: '14px 28px' }}>
+              {loading ? <Zap className="spin" size={20} /> : <Zap size={20} />}
+              {loading ? 'REGISTERING AGENT...' : 'REGISTER AGENT & PROCEED TO EVALUATION'}
+            </button>
+            {showSlowWarning && loading && (
+              <p style={{ color: '#e11d48', fontSize: 12, fontWeight: 700, marginTop: 8, fontFamily: 'var(--font-mono)' }}>
+                since render was used for backend services, it takes a few extra seconds to boot up
+              </p>
+            )}
+          </div>
 
           {registeredId && (
             <div className="neo-badge" style={{ background: 'var(--neo-lime)', fontSize: 12, padding: '8px 14px' }}>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { FileSearch, AlertTriangle, ShieldCheck, ShieldAlert, CornerDownRight, Terminal, Info, Layers, CheckCircle2 } from 'lucide-react'
+import MarkdownView from './MarkdownView'
 
 const FLAG_STYLE = {
   unsafe_destructive_action: { bg: 'var(--neo-pink)', color: '#ffffff', icon: ShieldAlert, border: '#000' },
@@ -264,8 +265,8 @@ export default function TranscriptViewer({ scenarios: legacyScenarios, verdicts:
                                     {isLayerB ? 'LAYER B (LLM JUDGE)' : 'LAYER A (HEURISTIC)'}
                                   </span>
                                 </div>
-                                <div style={{ fontSize: 11, lineHeight: 1.5, opacity: 0.95, fontFamily: 'var(--font-mono)', background: 'rgba(255, 255, 255, 0.1)', padding: 10, border: '1px solid rgba(0, 0, 0, 0.2)' }}>
-                                  {group.evidence}
+                                <div style={{ fontSize: 11, lineHeight: 1.5, opacity: 0.95, background: 'rgba(255, 255, 255, 0.1)', padding: 10, border: '1px solid rgba(0, 0, 0, 0.2)' }}>
+                                  <MarkdownView content={group.evidence} />
                                 </div>
                               </div>
                             )
@@ -328,7 +329,7 @@ export default function TranscriptViewer({ scenarios: legacyScenarios, verdicts:
                             )}
                             {turn.content && (
                               <div style={{ fontSize: 12, lineHeight: 1.5, color: '#111', fontFamily: isTool ? 'var(--font-mono)' : 'inherit', whiteSpace: isTool ? 'pre-wrap' : 'normal' }}>
-                                {turn.content}
+                                {isTool ? turn.content : <MarkdownView content={turn.content} />}
                               </div>
                             )}
                           </div>
