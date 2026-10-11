@@ -5,7 +5,8 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "warden.db")
 
 
 def _connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30.0)
+    conn.execute("PRAGMA journal_mode=WAL;")
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -87,6 +88,14 @@ def get_agent(agent_id: str) -> sqlite3.Row | None:
     try:
         row = conn.execute("SELECT * FROM agents WHERE id = ?", (agent_id,)).fetchone()
         return row
+    finally:
+        conn.close()
+
+
+def get_all_agents() -> list[sqlite3.Row]:
+    conn = _connect()
+    try:
+        return conn.execute("SELECT * FROM agents ORDER BY created_at DESC").fetchall()
     finally:
         conn.close()
 

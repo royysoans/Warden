@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Cpu, Zap, CheckCircle2, AlertCircle, Code, ShieldCheck, Sparkles, Tag, FileText } from 'lucide-react'
+import { Cpu, Zap, CheckCircle2, AlertCircle, Code, ShieldCheck, Sparkles, Tag, FileText, History } from 'lucide-react'
 
 const API = import.meta.env.VITE_API_URL || '/api'
 
@@ -165,7 +165,7 @@ SECURITY RULES:
   }
 }
 
-export default function AgentConfigForm({ onAgentRegistered }) {
+export default function AgentConfigForm({ onAgentRegistered, agents = [], onSelectAgent, activeAgentId }) {
   const [selectedPreset, setSelectedPreset] = useState('SupportBot')
   const [name, setName] = useState(PRESETS.SupportBot.name)
   const [versionLabel, setVersionLabel] = useState(PRESETS.SupportBot.versionLabel)
@@ -183,6 +183,18 @@ export default function AgentConfigForm({ onAgentRegistered }) {
     setVersionLabel(p.versionLabel)
     setSystemPrompt(p.systemPrompt)
     setToolsJson(JSON.stringify(p.tools, null, 2))
+    setError(null)
+  }
+
+  function loadExistingAgent(agent) {
+    setSelectedPreset(null)
+    setName(agent.name)
+    // Suggest the next minor version iteration
+    const curVer = agent.version_label || 'v1.0'
+    const nextVer = curVer.includes('-') ? `${curVer.split('-')[0]}-iter` : `${curVer}.1`
+    setVersionLabel(nextVer)
+    setSystemPrompt(agent.system_prompt || '')
+    setToolsJson(JSON.stringify(agent.tools || [], null, 2))
     setError(null)
   }
 
@@ -251,9 +263,91 @@ export default function AgentConfigForm({ onAgentRegistered }) {
         </div>
       </div>
 
-      <div style={{ margin: '20px 0', padding: 16, background: '#fef7ee', border: '2px solid #111827', borderRadius: 8, boxShadow: '2px 2px 0px #111827' }}>
+      {/* Saved Database Agents Section */}
+      {agents && agents.length > 0 && (
+        <div style={{ margin: '16px 0', padding: 14, background: '#f0fdf4', border: '2px solid #111827', borderRadius: 8, boxShadow: '2px 2px 0px #111827' }}>
+          <div style={{ fontSize: 12, fontWeight: 800, fontFamily: 'var(--font-heading)', textTransform: 'uppercase', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#166534' }}>
+              <History size={15} color="#166534" /> SAVED AGENTS IN DATABASE ({agents.length})
+            </span>
+            <span style={{ fontSize: 10, color: '#4b5563', fontFamily: 'var(--font-mono)' }}>
+              CLICK TO LOAD CONFIG OR ACTIVATE DIRECTLY
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', maxHeight: 150, overflowY: 'auto', paddingRight: 4 }}>
+            {agents.map(ag => {
+              const isActive = ag.id === activeAgentId
+              return (
+                <div
+                  key={ag.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    background: isActive ? 'var(--neo-yellow)' : '#ffffff',
+                    border: '1.5px solid #111827',
+                    borderRadius: 6,
+                    padding: '6px 10px',
+                    boxShadow: '1.5px 1.5px 0px #111827',
+                  }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: '#111827' }}>{ag.name}</span>
+                    <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: '#4b5563' }}>
+                      {ag.version_label || 'v1.0'} &bull; {ag.tools?.length || 0} tools
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 4, marginLeft: 6 }}>
+                    <button
+                      type="button"
+                      title="Load into Editor to iterate prompt & tools"
+                      onClick={() => loadExistingAgent(ag)}
+                      className="neo-btn"
+                      style={{
+                        padding: '3px 7px',
+                        fontSize: 10,
+                        background: '#ffffff',
+                        border: '1px solid #111827',
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                        fontWeight: 700,
+                      }}
+                    >
+                      Load Config
+                    </button>
+                    {!isActive && onSelectAgent && (
+                      <button
+                        type="button"
+                        title="Activate as current agent"
+                        onClick={() => onSelectAgent(ag)}
+                        className="neo-btn"
+                        style={{
+                          padding: '3px 7px',
+                          fontSize: 10,
+                          background: 'var(--neo-lime)',
+                          border: '1px solid #111827',
+                          borderRadius: 4,
+                          cursor: 'pointer',
+                          fontWeight: 700,
+                        }}
+                      >
+                        Activate
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Quick Presets Section */}
+      <div style={{ margin: '14px 0 20px', padding: 14, background: '#fef7ee', border: '2px solid #111827', borderRadius: 8, boxShadow: '2px 2px 0px #111827' }}>
         <div style={{ fontSize: 12, fontWeight: 800, fontFamily: 'var(--font-heading)', textTransform: 'uppercase', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6, color: '#111827' }}>
-          <Sparkles size={14} color="#e11d48" /> QUICK PRESETS (LOAD READY CONFIGS)
+          <Sparkles size={14} color="#e11d48" /> BUILT-IN TEMPLATES (LOAD FRESH PRESET)
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {Object.keys(PRESETS).map(key => (

@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from models import AgentConfig, ToolDefinition, RiskClass, RunCancelledError
 from db import (
     init_db,
-    insert_agent, get_agent,
+    insert_agent, get_agent, get_all_agents,
     insert_suite_run, update_suite_run_status, get_suite_run,
     get_suite_runs_for_agent,
     insert_scenario, get_scenarios_for_run,
@@ -171,6 +171,120 @@ def cancel_suite_run(suite_run_id: str) -> dict:
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
+
+@app.get("/agents")
+def list_agents() -> list[dict]:
+    """
+    Return all registered agent configurations, newest first.
+    """
+    rows = get_all_agents()
+    agents = []
+    for r in rows:
+        tools = []
+        if r["tools_json"]:
+            try:
+                tools = json.loads(r["tools_json"])
+            except Exception:
+                pass
+        agents.append({
+            "id": r["id"],
+            "name": r["name"],
+            "system_prompt": r["system_prompt"],
+            "tools": tools,
+            "version_label": r["version_label"],
+            "created_at": r["created_at"],
+        })
+    return agents
+
+
+@app.get("/agents/{agent_id}")
+def get_agent_detail(agent_id: str) -> dict:
+    """
+    Return a single registered agent configuration by ID.
+    """
+    r = get_agent(agent_id)
+    if not r:
+        raise HTTPException(status_code=404, detail=f"Agent '{agent_id}' not found")
+    tools = []
+    if r["tools_json"]:
+        try:
+            tools = json.loads(r["tools_json"])
+        except Exception:
+            pass
+    return {
+        "id": r["id"],
+        "name": r["name"],
+        "system_prompt": r["system_prompt"],
+        "tools": tools,
+        "version_label": r["version_label"],
+        "created_at": r["created_at"],
+    }
+
+
+@app.get("/agents/{agent_id}/runs")
+def get_agent_runs_full(agent_id: str) -> list[dict]:
+    """
+    Return all completed suite runs for an agent including scenarios, verdicts,
+    traces, and scorecards for rendering in the UI.
+    """
+    agent_row = get_agent(agent_id)
+    if not agent_row:
+        raise HTTPException(status_code=404, detail=f"Agent '{agent_id}' not found")
+
+    run_rows = get_suite_runs_for_agent(agent_id)
+    runs = []
+    for row in run_rows:
+        run_id = row["id"]
+        scorecard = None
+        if row["scorecard_json"]:
+            try:
+                scorecard = json.loads(row["scorecard_json"])
+            except Exception:
+                scorecard = {"raw": row["scorecard_json"]}
+
+        scenario_rows = get_scenarios_for_run(run_id)
+        verdict_rows = get_verdicts_for_run(run_id)
+
+        traces = {}
+        for v in verdict_rows:
+            if v["trace_json"]:
+                try:
+                    traces[v["scenario_id"]] = json.loads(v["trace_json"])
+                except Exception:
+                    pass
+
+        scenarios = []
+        for s in scenario_rows:
+            if s["scenario_json"]:
+                try:
+                    scenarios.append(json.loads(s["scenario_json"]))
+                except Exception:
+                    pass
+
+        verdicts = []
+        for v in verdict_rows:
+            if v["verdict_json"]:
+                try:
+                    verdicts.append(json.loads(v["verdict_json"]))
+                except Exception:
+                    pass
+
+        runs.append({
+            "runId": run_id,
+            "agentId": row["agent_id"],
+            "agentName": agent_row["name"],
+            "versionLabel": agent_row["version_label"],
+            "status": row["status"],
+            "scorecard": scorecard,
+            "scenarios": scenarios,
+            "verdicts": verdicts,
+            "traces": traces,
+            "timestamp": row["created_at"],
+        })
+    # Return newest first for UI display
+    runs.reverse()
+    return runs
+
 
 @app.post("/agents")
 def create_agent(body: AgentCreateRequest) -> dict:

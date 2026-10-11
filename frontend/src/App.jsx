@@ -1,10 +1,15 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import AgentConfigForm from './components/AgentConfigForm'
 import SuiteRunner from './components/SuiteRunner'
 import TranscriptViewer from './components/TranscriptViewer'
 import Scorecard from './components/Scorecard'
 import RegressionChart from './components/RegressionChart'
-import { ShieldAlert, PlayCircle, FileSearch, BarChart3, TrendingUp, Cpu, Sparkles, Layers } from 'lucide-react'
+import {
+  ShieldAlert, PlayCircle, FileSearch, BarChart3, TrendingUp,
+  Cpu, Sparkles, Layers, ChevronDown, RefreshCw, PlusCircle
+} from 'lucide-react'
+
+const API = import.meta.env.VITE_API_URL || '/api'
 
 const TABS = [
   { id: 'Register', label: '01. REGISTER', icon: Cpu, color: 'var(--neo-yellow)' },
@@ -16,6 +21,8 @@ const TABS = [
 
 export default function App() {
   const [tab, setTab] = useState('Register')
+  const [agents, setAgents] = useState([])
+  const [loadingAgents, setLoadingAgents] = useState(true)
   const [agentId, setAgentId] = useState(null)
   const [agentName, setAgentName] = useState(null)
   const [agentVersion, setAgentVersion] = useState(null)
@@ -24,11 +31,69 @@ export default function App() {
   const [allSuiteRuns, setAllSuiteRuns] = useState([])
   const [activeRunId, setActiveRunId] = useState(null)
 
-  function handleAgentRegistered(id, name, versionLabel) {
+  // Fetch agents on initial mount and restore saved agent if present
+  useEffect(() => {
+    fetchAgents()
+  }, [])
+
+  async function fetchAgents(preferredAgentId = null) {
+    setLoadingAgents(true)
+    try {
+      const res = await fetch(`${API}/agents`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const list = await res.json()
+      setAgents(list)
+
+      const targetId = preferredAgentId || localStorage.getItem('warden_active_agent_id')
+      const targetAgent = list.find(a => a.id === targetId) || list[0]
+      if (targetAgent) {
+        await selectAgent(targetAgent, false)
+      }
+    } catch (err) {
+      console.error('Failed to fetch agents:', err)
+    } finally {
+      setLoadingAgents(false)
+    }
+  }
+
+  async function selectAgent(agent, switchTab = false) {
+    if (!agent) return
+    setAgentId(agent.id)
+    setAgentName(agent.name)
+    setAgentVersion(agent.version_label || 'v1.0')
+    localStorage.setItem('warden_active_agent_id', agent.id)
+
+    if (switchTab) {
+      setTab('Run Suite')
+    }
+
+    // Load full historical runs for this agent from SQLite
+    try {
+      const res = await fetch(`${API}/agents/${agent.id}/runs`)
+      if (res.ok) {
+        const runs = await res.json()
+        setAllSuiteRuns(runs)
+        if (runs.length > 0) {
+          setActiveRunId(runs[0].runId)
+        } else {
+          setActiveRunId(null)
+        }
+      }
+    } catch (err) {
+      console.error(`Failed to fetch runs for agent ${agent.id}:`, err)
+    }
+  }
+
+  async function handleAgentRegistered(id, name, versionLabel) {
     setAgentId(id)
     setAgentName(name)
     setAgentVersion(versionLabel || 'v1.0')
+    localStorage.setItem('warden_active_agent_id', id)
+    setAllSuiteRuns([])
+    setActiveRunId(null)
     setTab('Run Suite')
+    // Refresh agents list and select newly created agent
+    await fetchAgents(id)
   }
 
   function handleRunCompleted(runId, scorecard, newScenarios, newVerdicts, newTraces, meta = {}) {
@@ -45,21 +110,15 @@ export default function App() {
     }
 
     setAllSuiteRuns(prev => {
-      // Replace if existing, else prepend new run
       const filtered = prev.filter(r => r.runId !== runId)
       return [runEntry, ...filtered]
     })
     setActiveRunId(runId)
   }
 
-  // Active run data for Traces and Scorecard
-  const activeRun = allSuiteRuns.find(r => r.runId === activeRunId) || allSuiteRuns[0] || null
-
-  // Only fully-completed runs (scorecard present + all 8 scenarios evaluated) are
-  // shown in tabs 3-5. Mid-run partial snapshots are excluded so downstream
-  // components never show incomplete data or N/A safety scores.
+  // Only runs with a scorecard and at least one scenario are shown in tabs 3-5
   const completedSuiteRuns = allSuiteRuns.filter(
-    r => r.scorecard != null && (r.scenarios?.length ?? 0) >= 8
+    r => r.scorecard != null && (r.scenarios?.length ?? 0) > 0
   )
 
   return (
@@ -80,15 +139,58 @@ export default function App() {
           <div className="neo-badge" style={{ background: 'var(--neo-lime)', color: '#111827' }}>
             <span className="pulse-dot"></span> PIPELINE ACTIVE
           </div>
-          {agentId ? (
-            <div className="neo-badge" style={{ background: 'var(--neo-pink)', color: '#111827' }}>
-              AGENT: <span style={{ fontFamily: 'var(--font-mono)' }}>{agentName || 'SupportBot'}</span> ({agentId.slice(0, 6)}…)
+
+          {/* Interactive Agent Selector Dropdown */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ position: 'relative' }}>
+              <select
+                aria-label="Select Target Agent"
+                value={agentId || ''}
+                onChange={(e) => {
+                  const val = e.target.value
+                  if (val === '__new__') {
+                    setTab('Register')
+                  } else {
+                    const found = agents.find(a => a.id === val)
+                    if (found) selectAgent(found)
+                  }
+                }}
+                style={styles.agentSelect}
+              >
+                {agents.length === 0 ? (
+                  <option value="">{loadingAgents ? 'Loading agents...' : 'No agents registered'}</option>
+                ) : (
+                  agents.map(a => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} ({a.version_label || 'v1.0'})
+                    </option>
+                  ))
+                )}
+                <option value="__new__">+ Register New Agent...</option>
+              </select>
+              <ChevronDown
+                size={14}
+                style={{
+                  position: 'absolute',
+                  right: 10,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  pointerEvents: 'none',
+                  color: '#111827',
+                  strokeWidth: 3,
+                }}
+              />
             </div>
-          ) : (
-            <div className="neo-badge" style={{ background: '#f3f4f6', color: '#6b7280', border: '1.5px solid #111827' }}>
-              NO AGENT LOADED
-            </div>
-          )}
+
+            <button
+              title="Refresh Agents List"
+              onClick={() => fetchAgents(agentId)}
+              className="neo-btn"
+              style={styles.iconBtn}
+            >
+              <RefreshCw size={14} strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -128,18 +230,39 @@ export default function App() {
                 <Sparkles size={20} />
               </div>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#4b5563' }}>ACTIVE TARGET AGENT & VERSION</div>
-                <div style={{ fontSize: 16, fontWeight: 800, fontFamily: 'var(--font-heading)' }}>
-                  {agentName} <span className="neo-badge" style={{ background: 'var(--neo-yellow)', marginLeft: 6 }}>{agentVersion || 'v1.0'}</span> <code style={{ fontSize: 12, background: '#f3eae0', padding: '2px 6px', border: '1.5px solid #111827', borderRadius: 4 }}>ID: {agentId.slice(0, 8)}</code>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#4b5563' }}>ACTIVE TARGET AGENT & VERSION</div>
+                <div style={{ fontSize: 16, fontWeight: 800, fontFamily: 'var(--font-heading)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span>{agentName}</span>
+                  <span className="neo-badge" style={{ background: 'var(--neo-yellow)' }}>{agentVersion || 'v1.0'}</span>
+                  <code style={{ fontSize: 11, background: '#f3eae0', padding: '2px 6px', border: '1.5px solid #111827', borderRadius: 4 }}>ID: {agentId.slice(0, 8)}</code>
                 </div>
               </div>
             </div>
 
-            {/* Completed Runs History Counter */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Completed Runs History Counter & Navigation */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <div style={{ fontSize: 12, fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
-                SUITE RUNS SAVED: <span className="neo-badge" style={{ background: 'var(--neo-lime)', color: '#111827' }}>{allSuiteRuns.length} RUNS</span>
+                HISTORICAL RUNS: <span className="neo-badge" style={{ background: allSuiteRuns.length > 0 ? 'var(--neo-lime)' : '#e5e7eb', color: '#111827' }}>{allSuiteRuns.length} RUNS</span>
               </div>
+              {allSuiteRuns.length > 0 && (
+                <button
+                  onClick={() => setTab('Scorecard')}
+                  className="neo-btn"
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: 11,
+                    background: 'var(--neo-purple)',
+                    color: '#ffffff',
+                    border: '2px solid #111827',
+                    borderRadius: 4,
+                    boxShadow: '2px 2px 0px #111827',
+                    cursor: 'pointer',
+                    fontWeight: 800,
+                  }}
+                >
+                  Latest Scorecard: {allSuiteRuns[0]?.scorecard?.safety_score != null ? `${allSuiteRuns[0].scorecard.safety_score.toFixed(0)}%` : 'N/A'}
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -147,7 +270,12 @@ export default function App() {
         {/* Tab Contents - Persistent Mounting */}
         <main style={{ marginTop: 20 }}>
           <div style={{ display: tab === 'Register' ? 'block' : 'none' }}>
-            <AgentConfigForm onAgentRegistered={handleAgentRegistered} />
+            <AgentConfigForm
+              onAgentRegistered={handleAgentRegistered}
+              agents={agents}
+              onSelectAgent={(ag) => selectAgent(ag, true)}
+              activeAgentId={agentId}
+            />
           </div>
 
           <div style={{ display: tab === 'Run Suite' ? 'block' : 'none' }}>
@@ -233,7 +361,37 @@ const styles = {
   statusGroup: {
     display: 'flex',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 10,
+  },
+  agentSelect: {
+    padding: '7px 30px 7px 12px',
+    background: 'var(--neo-pink)',
+    color: '#111827',
+    border: '2px solid #111827',
+    borderRadius: 6,
+    boxShadow: '2.5px 2.5px 0px #111827',
+    fontFamily: 'var(--font-heading)',
+    fontSize: 12,
+    fontWeight: 800,
+    cursor: 'pointer',
+    appearance: 'none',
+    outline: 'none',
+    maxWidth: 260,
+    textOverflow: 'ellipsis',
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+  },
+  iconBtn: {
+    padding: '7px 9px',
+    background: '#ffffff',
+    border: '2px solid #111827',
+    borderRadius: 6,
+    boxShadow: '2px 2px 0px #111827',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   container: {
     maxWidth: 1120,
@@ -272,3 +430,4 @@ const styles = {
     gap: 12,
   },
 }
+
