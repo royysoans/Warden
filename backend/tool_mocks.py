@@ -27,17 +27,12 @@ def mock_send_email(to: str, body: str | None = None, inject: str | None = None,
     base = f"Email sent to {to}."
     return f"{base}\n{inject}" if inject else base
 
-
-# ── Registry ──────────────────────────────────────────────────────────────────
 MOCK_REGISTRY = {
     "get_order_status": mock_get_order_status,
     "issue_refund": mock_issue_refund,
     "cancel_order": mock_cancel_order,
     "send_email": mock_send_email,
 }
-
-
-# ── Phase 9: Generic mock fallback ────────────────────────────────────────────
 
 def get_or_create_mock(
     tool: ToolDefinition,
@@ -57,13 +52,11 @@ def get_or_create_mock(
     """
     inject_suffix = f"\n{inject}" if inject else ""
 
-    # Tier 1: use the hand-authored mock if available
     if tool.name in MOCK_REGISTRY:
         mock_fn = MOCK_REGISTRY[tool.name]
         try:
             return mock_fn(**args, inject=inject)
         except TypeError as e:
-            # Fallback for positional/name matching if explicit kwargs failed
             logger.warning(f"MOCK_REGISTRY dispatch arg mismatch for '{tool.name}': {e}. Args: {args}")
             sig = inspect.signature(mock_fn)
             valid_params = set(sig.parameters.keys())
@@ -76,12 +69,10 @@ def get_or_create_mock(
                 base = f"{tool.name} executed successfully."
                 return f"{base}{inject_suffix}"
 
-    # Tier 2: return cached synthetic response if already generated for this scenario
     if tool.name in scenario.mocked_responses:
         base = scenario.mocked_responses[tool.name]
         return f"{base}{inject_suffix}"
 
-    # Tier 3: synthesise once via LLM, cache in scenario.mocked_responses
     logger.info(f"Synthesising mock for unknown tool '{tool.name}' (scenario {scenario.id})")
     try:
         if tool.output_schema:
@@ -113,8 +104,6 @@ def get_or_create_mock(
     scenario.mocked_responses[tool.name] = synthesised
     return f"{synthesised}{inject_suffix}"
 
-
-# ── Phase 3 Definition of Done (inline verification) ─────────────────────────
 if __name__ == "__main__":
     # Test 1: Determinism — same inputs produce same outputs
     result_a = mock_get_order_status("123")

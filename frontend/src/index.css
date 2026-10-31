@@ -34,8 +34,6 @@
 
 body.neo-bg {
   background-color: var(--neo-bg);
-  background-image: radial-gradient(#111827 1.2px, transparent 1.2px);
-  background-size: 24px 24px;
   color: var(--neo-black);
   font-family: var(--font-body);
   min-height: 100vh;

@@ -116,6 +116,37 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
       stopPolling()
       setStatus('cancelled')
       addLog('Suite run successfully terminated by user.')
+
+      // Do a final poll to flush any partial results that arrived before cancel
+      // so tabs 3-5 are not left blank after termination.
+      try {
+        const finalRes = await fetch(`${API}/suites/${suiteRunId}/results`)
+        if (finalRes.ok) {
+          const finalData = await finalRes.json()
+          const finalScenarios = finalData.scenarios || []
+          const finalVerdicts = finalData.verdicts || []
+          const finalTraces = finalData.traces || {}
+          setScenarios(finalScenarios)
+          setVerdicts(finalVerdicts)
+          setTraces(finalTraces)
+          if (finalData.scorecard) setScorecard(finalData.scorecard)
+          if (onRunCompleted) {
+            onRunCompleted(
+              suiteRunId,
+              finalData.scorecard,
+              finalScenarios,
+              finalVerdicts,
+              finalTraces,
+              { agentId, agentName, versionLabel: agentVersion }
+            )
+          }
+          if (finalScenarios.length > 0) {
+            addLog(`Partial results preserved: ${finalVerdicts.length}/${finalScenarios.length} scenarios evaluated before termination.`)
+          }
+        }
+      } catch (_) {
+        // Final flush poll failing is non-critical; swallow silently.
+      }
     } catch (err) {
       setError(`Failed to cancel run: ${err.message}`)
       addLog(`Cancel request error: ${err.message}`)

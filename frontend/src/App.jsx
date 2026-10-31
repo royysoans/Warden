@@ -4,6 +4,7 @@ import SuiteRunner from './components/SuiteRunner'
 import TranscriptViewer from './components/TranscriptViewer'
 import Scorecard from './components/Scorecard'
 import RegressionChart from './components/RegressionChart'
+import DEMO_RUN from './demoData'
 import {
   ShieldAlert, PlayCircle, FileSearch, BarChart3, TrendingUp,
   Cpu, Sparkles, Layers, ChevronDown, RefreshCw, PlusCircle
@@ -30,10 +31,20 @@ export default function App() {
   // Store all completed suite runs across prompt iterations for side-by-side comparison
   const [allSuiteRuns, setAllSuiteRuns] = useState([])
   const [activeRunId, setActiveRunId] = useState(null)
+  // Whether the current displayed data is the baked-in demo (no live agent selected yet)
+  const [isDemoMode, setIsDemoMode] = useState(false)
 
   // Fetch agents on initial mount and restore saved agent if present
   useEffect(() => {
     fetchAgents()
+  }, [])
+
+  // Seed demo data immediately on first paint so tabs 3-5 always have content.
+  // This is replaced the moment the user selects a real agent or a run completes.
+  useEffect(() => {
+    setAllSuiteRuns([DEMO_RUN])
+    setActiveRunId(DEMO_RUN.runId)
+    setIsDemoMode(true)
   }, [])
 
   async function fetchAgents(preferredAgentId = null) {
@@ -62,6 +73,7 @@ export default function App() {
     setAgentName(agent.name)
     setAgentVersion(agent.version_label || 'v1.0')
     localStorage.setItem('warden_active_agent_id', agent.id)
+    setIsDemoMode(false)
 
     if (switchTab) {
       setTab('Run Suite')
@@ -72,11 +84,14 @@ export default function App() {
       const res = await fetch(`${API}/agents/${agent.id}/runs`)
       if (res.ok) {
         const runs = await res.json()
-        setAllSuiteRuns(runs)
         if (runs.length > 0) {
+          setAllSuiteRuns(runs)
           setActiveRunId(runs[0].runId)
         } else {
-          setActiveRunId(null)
+          // No real runs yet — keep showing demo so tabs aren't blank
+          setAllSuiteRuns([DEMO_RUN])
+          setActiveRunId(DEMO_RUN.runId)
+          setIsDemoMode(true)
         }
       }
     } catch (err) {
@@ -91,6 +106,7 @@ export default function App() {
     localStorage.setItem('warden_active_agent_id', id)
     setAllSuiteRuns([])
     setActiveRunId(null)
+    setIsDemoMode(false)
     setTab('Run Suite')
     // Refresh agents list and select newly created agent
     await fetchAgents(id)
@@ -109,8 +125,10 @@ export default function App() {
       timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     }
 
+    setIsDemoMode(false)
     setAllSuiteRuns(prev => {
-      const filtered = prev.filter(r => r.runId !== runId)
+      // Remove demo run and any prior entry for this runId
+      const filtered = prev.filter(r => r.runId !== runId && r.runId !== DEMO_RUN.runId)
       return [runEntry, ...filtered]
     })
     setActiveRunId(runId)
@@ -288,6 +306,7 @@ export default function App() {
           </div>
 
           <div style={{ display: tab === 'Transcripts' ? 'block' : 'none' }}>
+            {isDemoMode && <DemoBanner />}
             <TranscriptViewer
               allSuiteRuns={completedSuiteRuns}
               activeRunId={activeRunId}
@@ -296,6 +315,7 @@ export default function App() {
           </div>
 
           <div style={{ display: tab === 'Scorecard' ? 'block' : 'none' }}>
+            {isDemoMode && <DemoBanner />}
             <Scorecard
               allSuiteRuns={completedSuiteRuns}
               activeRunId={activeRunId}
@@ -304,6 +324,7 @@ export default function App() {
           </div>
 
           <div style={{ display: tab === 'Regression' ? 'block' : 'none' }}>
+            {isDemoMode && <DemoBanner />}
             <RegressionChart
               agentId={agentId}
               allSuiteRuns={completedSuiteRuns}
@@ -429,5 +450,28 @@ const styles = {
     flexWrap: 'wrap',
     gap: 12,
   },
+}
+
+function DemoBanner() {
+  return (
+    <div style={{
+      marginBottom: 16,
+      padding: '10px 16px',
+      background: 'var(--neo-yellow)',
+      border: '2px solid #111827',
+      boxShadow: '3px 3px 0px #111827',
+      borderRadius: 6,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      fontFamily: 'var(--font-heading)',
+      fontWeight: 800,
+      fontSize: 13,
+      color: '#111827',
+    }}>
+      <Sparkles size={16} />
+      DEMO MODE — Showing a real cached evaluation run (SupportBot v1.2-guarded). Register an agent and run a suite to see your own results.
+    </div>
+  )
 }
 

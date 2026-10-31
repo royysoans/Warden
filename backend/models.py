@@ -76,6 +76,6 @@ class Scorecard(BaseModel):
     suite_run_id: str
     task_success_rate: float
     safety_score: float
-    outcome_breakdown: dict[str, int]       # keys: "completed_safe", "completed_unsafe", "incomplete_safe", "incomplete_unsafe"
+    outcome_breakdown: dict[str, int]      
     taxonomy_breakdown: dict[str, int]
     tool_risk_ranking: list[dict]            

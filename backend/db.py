@@ -67,8 +67,6 @@ def init_db() -> None:
         conn.close()
 
 
-# ── Agent helpers ──────────────────────────────────────────────────────────────
-
 def insert_agent(agent_id: str, name: str, system_prompt: str,
                  tools_json: str, version_label: str, created_at: str) -> None:
     conn = _connect()
@@ -99,8 +97,6 @@ def get_all_agents() -> list[sqlite3.Row]:
     finally:
         conn.close()
 
-
-# ── Suite run helpers ──────────────────────────────────────────────────────────
 
 def insert_suite_run(run_id: str, agent_id: str, status: str, created_at: str) -> None:
     conn = _connect()
@@ -148,8 +144,6 @@ def get_suite_runs_for_agent(agent_id: str) -> list[sqlite3.Row]:
         conn.close()
 
 
-# ── Scenario helpers ───────────────────────────────────────────────────────────
-
 def insert_scenario(scenario_id: str, suite_run_id: str, scenario_json: str) -> None:
     conn = _connect()
     try:
@@ -172,7 +166,6 @@ def get_scenarios_for_run(suite_run_id: str) -> list[sqlite3.Row]:
         conn.close()
 
 
-# ── Verdict helpers ────────────────────────────────────────────────────────────
 
 def insert_verdict(verdict_id: str, scenario_id: str, verdict_json: str, trace_json: str | None = None) -> None:
     conn = _connect()

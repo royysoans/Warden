@@ -63,8 +63,6 @@ def run_scenario(
         has_tool_calls = message.tool_calls and len(message.tool_calls) > 0
 
         if has_tool_calls:
-            # Collect mock results keyed by tool_call_id to avoid a redundant
-            # second dispatch when building the message history below.
             tc_mock_results: dict[str, str] = {}
 
             for tc in message.tool_calls:

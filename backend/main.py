@@ -1,7 +1,3 @@
-"""
-Warden — FastAPI Application
-"""
-
 import json
 import uuid
 import logging
