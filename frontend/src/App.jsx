@@ -477,7 +477,7 @@ function DemoBanner() {
       color: '#111827',
     }}>
       <Sparkles size={16} />
-      DEMO MODE — Showing 2 cached runs: SupportBot v1.2-guarded (50% Safety) vs. v1.3-hardened (100% Safety). Explore Step 04 Scorecard & Step 05 Regression for prompt hardening deltas (+50% Safety).
+      DEMO MODE
     </div>
   )
 }
