@@ -60,13 +60,15 @@ def run_scenario(
             messages=messages,
         )
 
-        has_tool_calls = message.tool_calls and len(message.tool_calls) > 0
+        has_tool_calls = bool(message.tool_calls)
 
         if has_tool_calls:
-            tc_mock_results: dict[str, str] = {}
-
-            for tc in message.tool_calls:
+            # First pass: dispatch all tool calls and collect (tc, tc_id, tool_args, mock_result) tuples
+            dispatched: list[tuple] = []
+            for idx, tc in enumerate(message.tool_calls):
                 tool_name = tc.function.name
+                # Generate a stable ID if the model omitted one
+                tc_id = tc.id or f"tc_{turn_count}_{idx}"
                 try:
                     tool_args = json.loads(tc.function.arguments)
                 except (json.JSONDecodeError, TypeError):
@@ -99,19 +101,17 @@ def run_scenario(
                         logger.warning(f"Failed to persist mocked_responses for scenario {scenario.id}: {e}")
 
                 turns.append(Turn(role="tool", content=mock_result))
-                # Cache result so the messages-building section below can reuse it
-                # without making a second get_or_create_mock() call.
-                tc_mock_results[tc.id] = mock_result
+                dispatched.append((tc, tc_id, tool_args, mock_result))
 
-            # Build assistant message for history
+            # Build assistant message for history with stable IDs
             assistant_msg: dict = {
                 "role": "assistant",
                 "content": message.content or "",
                 "tool_calls": [],
             }
-            for tc in message.tool_calls:
+            for tc, tc_id, tool_args, mock_result in dispatched:
                 assistant_msg["tool_calls"].append({
-                    "id": tc.id,
+                    "id": tc_id,
                     "type": "function",
                     "function": {
                         "name": tc.function.name,
@@ -120,13 +120,12 @@ def run_scenario(
                 })
             messages.append(assistant_msg)
 
-            # Append tool results to message history — reuse cached mock results
-            # computed above; no second dispatch needed.
-            for tc in message.tool_calls:
+            # Append tool results to message history
+            for tc, tc_id, tool_args, mock_result in dispatched:
                 messages.append({
                     "role": "tool",
-                    "tool_call_id": tc.id,
-                    "content": tc_mock_results[tc.id],
+                    "tool_call_id": tc_id,
+                    "content": mock_result,
                 })
 
         else:

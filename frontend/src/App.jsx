@@ -4,7 +4,6 @@ import SuiteRunner from './components/SuiteRunner'
 import TranscriptViewer from './components/TranscriptViewer'
 import Scorecard from './components/Scorecard'
 import RegressionChart from './components/RegressionChart'
-import DEMO_RUN, { DEMO_RUNS } from './demoData'
 import {
   ShieldAlert, PlayCircle, FileSearch, BarChart3, TrendingUp,
   Cpu, Sparkles, Layers, ChevronDown, RefreshCw, PlusCircle
@@ -31,22 +30,9 @@ export default function App() {
   // Store all completed suite runs across prompt iterations for side-by-side comparison
   const [allSuiteRuns, setAllSuiteRuns] = useState([])
   const [activeRunId, setActiveRunId] = useState(null)
-  // Whether the current displayed data is the baked-in demo (no live agent selected yet)
-  const [isDemoMode, setIsDemoMode] = useState(true)
 
-  function loadDemoMode() {
-    setAgentId(DEMO_RUNS[0].agentId)
-    setAgentName(DEMO_RUNS[0].agentName)
-    setAgentVersion(DEMO_RUNS[0].versionLabel)
-    setAllSuiteRuns(DEMO_RUNS)
-    setActiveRunId(DEMO_RUNS[0].runId)
-    setIsDemoMode(true)
-    localStorage.setItem('warden_active_agent_id', '__demo__')
-  }
-
-  // Seed demo data immediately on first paint so tabs 3-5 always have content.
+  // Fetch agents on initial mount and restore saved agent if present
   useEffect(() => {
-    loadDemoMode()
     fetchAgents()
   }, [])
 
@@ -59,11 +45,9 @@ export default function App() {
       setAgents(list)
 
       const targetId = preferredAgentId || localStorage.getItem('warden_active_agent_id')
-      if (targetId && targetId !== '__demo__') {
-        const targetAgent = list.find(a => a.id === targetId)
-        if (targetAgent) {
-          await selectAgent(targetAgent, false)
-        }
+      const targetAgent = list.find(a => a.id === targetId) || list[0]
+      if (targetAgent) {
+        await selectAgent(targetAgent, false)
       }
     } catch (err) {
       console.error('Failed to fetch agents:', err)
@@ -78,7 +62,6 @@ export default function App() {
     setAgentName(agent.name)
     setAgentVersion(agent.version_label || 'v1.0')
     localStorage.setItem('warden_active_agent_id', agent.id)
-    setIsDemoMode(false)
 
     if (switchTab) {
       setTab('Run Suite')
@@ -109,7 +92,6 @@ export default function App() {
     localStorage.setItem('warden_active_agent_id', id)
     setAllSuiteRuns([])
     setActiveRunId(null)
-    setIsDemoMode(false)
     setTab('Run Suite')
     // Refresh agents list and select newly created agent
     await fetchAgents(id)
@@ -128,11 +110,8 @@ export default function App() {
       timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     }
 
-    setIsDemoMode(false)
     setAllSuiteRuns(prev => {
-      // Remove demo runs and any prior entry for this runId
-      const demoRunIds = new Set(DEMO_RUNS.map(r => r.runId))
-      const filtered = prev.filter(r => r.runId !== runId && !demoRunIds.has(r.runId))
+      const filtered = prev.filter(r => r.runId !== runId)
       return [runEntry, ...filtered]
     })
     setActiveRunId(runId)
@@ -167,13 +146,11 @@ export default function App() {
             <div style={{ position: 'relative' }}>
               <select
                 aria-label="Select Target Agent"
-                value={isDemoMode ? '__demo__' : (agentId || '')}
+                value={agentId || ''}
                 onChange={(e) => {
                   const val = e.target.value
                   if (val === '__new__') {
                     setTab('Register')
-                  } else if (val === '__demo__') {
-                    loadDemoMode()
                   } else {
                     const found = agents.find(a => a.id === val)
                     if (found) selectAgent(found)
@@ -181,15 +158,14 @@ export default function App() {
                 }}
                 style={styles.agentSelect}
               >
-                <option value="__demo__">⭐ DEMO: SupportBot (v1.2 → v1.3 Hardened)</option>
-                {agents.length > 0 && (
-                  <optgroup label="Registered Agents">
-                    {agents.map(a => (
-                      <option key={a.id} value={a.id}>
-                        {a.name} ({a.version_label || 'v1.0'})
-                      </option>
-                    ))}
-                  </optgroup>
+                {agents.length === 0 ? (
+                  <option value="">{loadingAgents ? 'Loading agents...' : 'No agents registered'}</option>
+                ) : (
+                  agents.map(a => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} ({a.version_label || 'v1.0'})
+                    </option>
+                  ))
                 )}
                 <option value="__new__">+ Register New Agent...</option>
               </select>
@@ -313,7 +289,6 @@ export default function App() {
           </div>
 
           <div style={{ display: tab === 'Transcripts' ? 'block' : 'none' }}>
-            {isDemoMode && <DemoBanner />}
             <TranscriptViewer
               allSuiteRuns={completedSuiteRuns}
               activeRunId={activeRunId}
@@ -322,7 +297,6 @@ export default function App() {
           </div>
 
           <div style={{ display: tab === 'Scorecard' ? 'block' : 'none' }}>
-            {isDemoMode && <DemoBanner />}
             <Scorecard
               allSuiteRuns={completedSuiteRuns}
               activeRunId={activeRunId}
@@ -331,7 +305,6 @@ export default function App() {
           </div>
 
           <div style={{ display: tab === 'Regression' ? 'block' : 'none' }}>
-            {isDemoMode && <DemoBanner />}
             <RegressionChart
               agentId={agentId}
               allSuiteRuns={completedSuiteRuns}
@@ -457,28 +430,5 @@ const styles = {
     flexWrap: 'wrap',
     gap: 12,
   },
-}
-
-function DemoBanner() {
-  return (
-    <div style={{
-      marginBottom: 16,
-      padding: '10px 16px',
-      background: 'var(--neo-yellow)',
-      border: '2px solid #111827',
-      boxShadow: '3px 3px 0px #111827',
-      borderRadius: 6,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-      fontFamily: 'var(--font-heading)',
-      fontWeight: 800,
-      fontSize: 13,
-      color: '#111827',
-    }}>
-      <Sparkles size={16} />
-      DEMO MODE
-    </div>
-  )
 }
 

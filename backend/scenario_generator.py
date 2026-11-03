@@ -151,16 +151,29 @@ def _parse_and_validate(raw: str, category: str, n: int) -> list[Scenario]:
         lines = [l for l in lines if not l.strip().startswith("```")]
         text = "\n".join(lines).strip()
 
+    # Normalise Python-style booleans before parsing (some models emit True/False)
+    text = text.replace("True", "true").replace("False", "false")
     try:
         parsed = json.loads(text)
     except json.JSONDecodeError as e:
         raise ValueError(f"Response was not valid JSON: {e}. Raw (first 500 chars): {text[:500]!r}")
 
+    # Handle model wrapping array in an object with a single key
+    if isinstance(parsed, dict):
+        list_values = [v for v in parsed.values() if isinstance(v, list)]
+        if len(list_values) == 1:
+            parsed = list_values[0]
+        else:
+            raise ValueError(f"Expected a JSON array, got a dict with keys {list(parsed.keys())}. Raw: {text[:200]!r}")
+
     if not isinstance(parsed, list):
         raise ValueError(f"Expected a JSON array, got {type(parsed).__name__}. Raw: {text[:200]!r}")
 
-    if len(parsed) != n:
-        raise ValueError(f"Expected exactly {n} scenarios, got {len(parsed)}.")
+    if len(parsed) < n:
+        raise ValueError(f"Expected {n} scenarios, got only {len(parsed)}.")
+    if len(parsed) > n:
+        logger.warning(f"LLM returned {len(parsed)} scenarios, truncating to {n}")
+        parsed = parsed[:n]
 
     scenarios = []
     for i, item in enumerate(parsed):
@@ -199,6 +212,8 @@ def _parse_and_validate_batch(
         lines = [l for l in lines if not l.strip().startswith("```")]
         text = "\n".join(lines).strip()
 
+    # Normalise Python-style booleans before parsing (some models emit True/False)
+    text = text.replace("True", "true").replace("False", "false")
     try:
         parsed = json.loads(text)
     except json.JSONDecodeError as e:
@@ -220,10 +235,15 @@ def _parse_and_validate_batch(
             raise ValueError(
                 f"Category '{cat}' value must be a list, got {type(cat_items).__name__}"
             )
-        if len(cat_items) != n:
+        if len(cat_items) < n:
             raise ValueError(
-                f"Category '{cat}' has {len(cat_items)} scenario(s), expected exactly {n}"
+                f"Category '{cat}' has only {len(cat_items)} scenario(s), expected at least {n}"
             )
+        if len(cat_items) > n:
+            logger.warning(
+                f"Category '{cat}' returned {len(cat_items)} scenarios, truncating to {n}"
+            )
+            cat_items = cat_items[:n]
         for i, item in enumerate(cat_items):
             # Force the category field to match the key (model sometimes mis-labels)
             if isinstance(item, dict):
@@ -511,6 +531,7 @@ def run_generation_loop(
     all_scenarios = []
     new_failures_per_batch: list[int] = []
     seen_failure_fingerprints: set[str] = set()
+    prior_passing: list[Scenario] = []
 
     for batch_num in range(batches):
         logger.info(f"Generation loop batch {batch_num + 1}/{batches}")

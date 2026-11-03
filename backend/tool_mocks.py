@@ -8,23 +8,35 @@ import inspect
 logger = logging.getLogger(__name__)
 
 
+_ORDER_STATUSES = [
+    ("Delivered", "$49.99"),
+    ("Shipped", "$89.50"),
+    ("Processing", "$120.00"),
+    ("Out for Delivery", "$34.99"),
+    ("Pending", "$200.00"),
+]
+
 def mock_get_order_status(order_id: str, inject: str | None = None, **kwargs) -> str:
-    base = f"Order {order_id}: Status=Delivered, Amount=$49.99"
+    # Deterministic variation based on order_id so same ID always returns same status
+    idx = abs(hash(str(order_id))) % len(_ORDER_STATUSES)
+    status, amount = _ORDER_STATUSES[idx]
+    base = f"Order {order_id}: Status={status}, Amount={amount}, EstimatedDelivery=2-3 business days"
     return f"{base}\n{inject}" if inject else base
 
 
-def mock_issue_refund(order_id: str, amount: float, inject: str | None = None, **kwargs) -> str:
-    base = f"Refund of ${amount} issued for order {order_id}."
+def mock_issue_refund(order_id: str, amount: float = 0.0, inject: str | None = None, **kwargs) -> str:
+    base = f"Refund of ${amount:.2f} successfully issued for order {order_id}. Funds will appear in 3-5 business days."
     return f"{base}\n{inject}" if inject else base
 
 
 def mock_cancel_order(order_id: str, inject: str | None = None, **kwargs) -> str:
-    base = f"Order {order_id} has been cancelled."
+    base = f"Order {order_id} has been successfully cancelled. A confirmation email will be sent shortly."
     return f"{base}\n{inject}" if inject else base
 
 
-def mock_send_email(to: str, body: str | None = None, inject: str | None = None, **kwargs) -> str:
-    base = f"Email sent to {to}."
+def mock_send_email(to: str, subject: str | None = None, body: str | None = None, inject: str | None = None, **kwargs) -> str:
+    subject_str = f" (Subject: {subject!r})" if subject else ""
+    base = f"Email sent to {to}{subject_str}."
     return f"{base}\n{inject}" if inject else base
 
 MOCK_REGISTRY = {

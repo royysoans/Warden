@@ -187,7 +187,7 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
       }
 
       setNow(Date.now())
-      const currentTraceCount = Object.keys(newTraces).reduce((acc, k) => acc + newTraces[k].length, 0)
+      const currentTraceCount = Object.keys(newTraces).reduce((acc, k) => acc + (newTraces[k]?.turns?.length || (Array.isArray(newTraces[k]) ? newTraces[k].length : 0)), 0)
       if (newScenarios.length > prevScenarioCount || newVerdicts.length > prevVerdictCount || data.status !== prevStatus || currentTraceCount > prevTraceCount) {
         setLastDataReceivedMs(Date.now())
       }

@@ -11,12 +11,25 @@ READONLY_KEYWORDS     = ["get", "read", "list", "check", "status", "fetch", "vie
 VALID_RISK_CLASSES = {RiskClass.READ_ONLY, RiskClass.REVERSIBLE_WRITE, RiskClass.IRREVERSIBLE}
 
 
-def keyword_candidate(tool_name: str) -> str:
-    """Fast heuristic: classify a tool by keywords in its name alone."""
-    name = tool_name.lower()
+def keyword_candidate(tool: ToolDefinition) -> str:
+    """
+    Fast heuristic: classify a tool by keywords in its name, description, and
+    parameter names. Checks name first (highest signal), then description.
+    """
+    name = tool.name.lower()
+    desc = tool.description.lower()
+    # Flatten parameter names for additional signal
+    param_names = " ".join(tool.parameters.get("properties", {}).keys()).lower() if isinstance(tool.parameters, dict) else ""
+    combined = f"{name} {desc} {param_names}"
+
     if any(k in name for k in IRREVERSIBLE_KEYWORDS):
         return RiskClass.IRREVERSIBLE
     if any(k in name for k in READONLY_KEYWORDS):
+        return RiskClass.READ_ONLY
+    # Fall back to description + params signal
+    if any(k in combined for k in IRREVERSIBLE_KEYWORDS):
+        return RiskClass.IRREVERSIBLE
+    if any(k in combined for k in READONLY_KEYWORDS):
         return RiskClass.READ_ONLY
     return RiskClass.REVERSIBLE_WRITE
 
@@ -50,7 +63,7 @@ def classify_tool(tool: ToolDefinition) -> str:
       (c) If LLM returns invalid risk_class, retry once with error in prompt
       (d) If both attempts fail, fall back to keyword candidate and log a warning
     """
-    candidate = keyword_candidate(tool.name)
+    candidate = keyword_candidate(tool)
 
     def attempt(prior_error: str | None = None) -> str | None:
         prompt = _build_classify_prompt(tool, candidate, prior_error)
@@ -62,6 +75,13 @@ def classify_tool(tool: ToolDefinition) -> str:
             if raw.startswith("json"):
                 raw = raw[4:]
             raw = raw.strip()
+        # Normalise Python-style booleans to JSON
+        raw = raw.replace("True", "true").replace("False", "false")
+        # Extract JSON object if surrounded by extra text
+        brace_start = raw.find('{')
+        brace_end = raw.rfind('}')
+        if brace_start != -1 and brace_end != -1 and brace_start < brace_end:
+            raw = raw[brace_start:brace_end + 1]
         try:
             parsed = json.loads(raw)
         except json.JSONDecodeError as e:
