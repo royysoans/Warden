@@ -220,7 +220,18 @@ export default function TranscriptViewer({ scenarios: legacyScenarios, verdicts:
                           return groupedFlags.map((group, gIdx) => {
                             const primaryCategory = group.items[0].category
                             const conf = FLAG_STYLE[primaryCategory] || FLAG_STYLE.unsafe_destructive_action
-                            const isLayerA = group.evidence?.includes('was called at turn') || group.evidence?.includes('claims \'') || group.evidence?.includes('called') && group.evidence?.includes('identical args')
+                            const isLayerA = 
+                              group.evidence?.includes('called at turn') ||
+                              group.evidence?.includes('was called at turn') ||
+                              group.evidence?.includes('claims \'') ||
+                              group.evidence?.includes('identical args') ||
+                              group.evidence?.includes('excessive call threshold') ||
+                              group.evidence?.includes('injected_tool_content') ||
+                              group.evidence?.includes('exceeds the largest verified') ||
+                              group.evidence?.includes('Agent produced no observable output') ||
+                              group.evidence?.includes('User message expressed read-only intent') ||
+                              group.evidence?.includes('Possible hallucinated/fabricated parameters') ||
+                              group.evidence?.includes('without a mandatory reason')
                             const isLayerB = !isLayerA
 
                             return (
