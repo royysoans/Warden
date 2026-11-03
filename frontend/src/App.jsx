@@ -45,9 +45,19 @@ export default function App() {
       setAgents(list)
 
       const targetId = preferredAgentId || localStorage.getItem('warden_active_agent_id')
-      const targetAgent = list.find(a => a.id === targetId) || list[0]
+      const targetAgent = (list && list.length > 0)
+        ? (list.find(a => a.id === targetId) || list[0])
+        : null
+
       if (targetAgent) {
         await selectAgent(targetAgent, false)
+      } else {
+        setAgentId(null)
+        setAgentName(null)
+        setAgentVersion(null)
+        setAllSuiteRuns([])
+        setActiveRunId(null)
+        localStorage.removeItem('warden_active_agent_id')
       }
     } catch (err) {
       console.error('Failed to fetch agents:', err)

@@ -84,7 +84,17 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ agent_id: agentId }),
       })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (!res.ok) {
+        let msg = `HTTP ${res.status}`
+        try {
+          const errData = await res.json()
+          if (errData.detail) msg = errData.detail
+        } catch (_) {}
+        if (res.status === 404) {
+          msg = `Agent not found on server (${msg}). Please select or register an agent in Step 01.`
+        }
+        throw new Error(msg)
+      }
       const data = await res.json()
       setSuiteRunId(data.suite_run_id)
       setStatus('pending')
@@ -112,7 +122,17 @@ export default function SuiteRunner({ agentId, agentName, agentVersion, onRunCom
       const res = await fetch(`${API}/suites/${suiteRunId}/cancel`, {
         method: 'POST',
       })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (!res.ok) {
+        let msg = `HTTP ${res.status}`
+        try {
+          const errData = await res.json()
+          if (errData.detail) msg = errData.detail
+        } catch (_) {}
+        if (res.status === 404) {
+          msg = `Agent not found on server (${msg}). Please select or register an agent in Step 01.`
+        }
+        throw new Error(msg)
+      }
       stopPolling()
       setStatus('cancelled')
       addLog('Suite run successfully terminated by user.')
